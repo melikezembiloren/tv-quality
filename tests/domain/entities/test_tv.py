@@ -12,21 +12,13 @@ def test_scrap_succeeds_when_tv_is_fail():
     tv.mark_scrap()
     assert tv.status == "SCRAP"
 
-
-def test_scrap_fails_when_tv_is_not_fail():
-    tv = make_tv(status="PASS")
-    # TODO: tv.mark_scrap() çağrıldığında InvalidTvStateError fırladığını doğrula
-    # ipucu: pytest.raises(InvalidTvStateError) kullan
-    pass
+def test_fail_succeeds_when_tv_is_not_scrap():
+    tv = make_tv(status="IN_PRODUCTION")
+    tv.mark_fail()
+    assert tv.status == "FAIL"
 
 
-def test_rework_succeeds_when_tv_is_fail():
-    tv = make_tv(status="FAIL")
-    # TODO
-    pass
-
-
-def test_rework_fails_when_tv_is_not_fail():
-    tv = make_tv(status="PASS")
-    # TODO
-    pass
+def test_fail_fails_when_tv_is_scrap():
+    tv = make_tv(status="SCRAP")
+    with pytest.raises(InvalidTvStateError):
+        tv.mark_fail()

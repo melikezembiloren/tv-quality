@@ -9,6 +9,7 @@ class TV:
     id: int | None
     serial_number: str          
     line_id: int
+    product_model_id: int
     status: str = "IN_PRODUCTION"
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
