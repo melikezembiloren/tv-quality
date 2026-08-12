@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Yeni Denetim — QualiTV</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg:            #f5f6f8;
+    --surface:       #ffffff;
+    --ink:           #10161c;
+    --ink-2:         #55606b;
+    --ink-3:         #8b96a1;
+    --border:        #dde2e6;
+    --accent:        #4a3aa7;
+    --accent-soft:   #e6e2f7;
+    --good:          #0ca30c;
+    --critical:      #d03b3b;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", "Consolas", monospace;
+    --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0d1013; --surface: #15191d; --ink: #f2f4f6; --ink-2: #aab2ba; --ink-3: #757e87;
+      --border: rgba(255,255,255,0.10); --accent: #9085e9; --accent-soft: #2a2350;
+      --good: #0ca30c; --critical: #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0d1013; --surface: #15191d; --ink: #f2f4f6; --ink-2: #aab2ba; --ink-3: #757e87;
+    --border: rgba(255,255,255,0.10); --accent: #9085e9; --accent-soft: #2a2350;
+    --good: #0ca30c; --critical: #e66767;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  .page { max-width: 720px; margin: 0 auto; padding: 40px 24px 80px; display: flex; flex-direction: column; gap: 24px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0 0 8px; }
+  h1 { font-size: clamp(22px, 3vw, 28px); margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: var(--ink-2); font-size: 13.5px; }
+  a.back { color: var(--ink-2); font-size: 12.5px; text-decoration: none; }
+  a.back:hover { color: var(--accent); }
+
+  form { display: flex; flex-direction: column; gap: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 22px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+  .field .hint { font-size: 11.5px; color: var(--ink-3); }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 560px) { .row { grid-template-columns: 1fr; } }
+
+  input, select, textarea {
+    font: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+  }
+  textarea { resize: vertical; min-height: 44px; }
+
+  h2 { font-size: 15px; font-weight: 600; margin: 0; }
+  .card-sub { font-size: 12.5px; color: var(--ink-2); margin-top: -10px; }
+
+  .finding-row { display: grid; grid-template-columns: 1fr 150px 32px; gap: 10px; align-items: start; }
+  @media (max-width: 560px) { .finding-row { grid-template-columns: 1fr; } }
+  .finding-remove {
+    width: 32px; height: 38px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--ink-2); cursor: pointer; font-size: 16px; line-height: 1;
+  }
+  .finding-remove:hover { color: var(--critical); border-color: var(--critical); }
+
+  .add-finding {
+    align-self: flex-start;
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 600; color: var(--accent);
+    background: var(--accent-soft); border: none; border-radius: 8px;
+    padding: 8px 14px; cursor: pointer;
+  }
+  .add-finding:hover { opacity: 0.85; }
+
+  .no-findings { font-size: 12.5px; color: var(--ink-3); font-style: italic; }
+
+  button.submit {
+    font: inherit; font-size: 14.5px; font-weight: 600; color: #fff;
+    background: var(--accent); border: none; border-radius: 8px;
+    padding: 12px 20px; cursor: pointer;
+  }
+  button.submit:hover { opacity: 0.92; }
+  button.submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .banner { border-radius: 10px; padding: 14px 18px; font-size: 13.5px; display: none; }
+  .banner.show { display: block; }
+  .banner.success { background: color-mix(in srgb, var(--good) 14%, var(--surface)); border: 1px solid var(--good); color: var(--ink); }
+  .banner.error { background: color-mix(in srgb, var(--critical) 14%, var(--surface)); border: 1px solid var(--critical); color: var(--ink); }
+  .banner a { color: var(--accent); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <p class="eyebrow">Kalite &middot; Denetim Modülü</p>
+    <h1>Yeni Denetim Kaydı</h1>
+    <div class="sub">Bir hat için aylık denetim ve varsa bulgularını gir.</div>
+  </header>
+
+  <div class="banner" id="banner"></div>
+
+  <form id="audit-form">
+    <div class="card">
+      <div class="row">
+        <div class="field">
+          <label for="line">Üretim Hattı</label>
+          <select id="line" required><option value="">Yükleniyor…</option></select>
+        </div>
+        <div class="field">
+          <label for="user">Denetimi Yapan</label>
+          <select id="user" required><option value="">Yükleniyor…</option></select>
+        </div>
+      </div>
+      <div class="field" style="max-width: 220px;">
+        <label for="month">Denetim Ayı</label>
+        <input type="month" id="month" required />
+        <div class="hint">Örn. Ağustos 2026</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div>
+        <h2>Bulgular</h2>
+        <div class="card-sub">Denetimde tespit edilen sorunlar (opsiyonel — hiç bulgu olmayabilir)</div>
+      </div>
+      <div id="findings-list"></div>
+      <div id="no-findings" class="no-findings">Henüz bulgu eklenmedi.</div>
+      <button type="button" class="add-finding" id="add-finding-btn">+ Bulgu Ekle</button>
+    </div>
+
+    <button type="submit" class="submit" id="submit-btn">Denetimi Kaydet</button>
+  </form>
+
+  <a class="back" href="/quality-dashboard">&larr; Kalite Dashboard'a dön</a>
+</div>
+
+<template id="finding-template">
+  <div class="finding-row" data-finding-row>
+    <textarea placeholder="Bulgu açıklaması — örn. Hat sonu istasyonda etiketleme eksik" required data-desc></textarea>
+    <select data-severity>
+      <option value="LOW">Düşük</option>
+      <option value="MEDIUM" selected>Orta</option>
+      <option value="HIGH">Yüksek</option>
+      <option value="CRITICAL">Kritik</option>
+    </select>
+    <button type="button" class="finding-remove" title="Bu bulguyu kaldır" data-remove>&times;</button>
+  </div>
+</template>
+
+<script>
+const lineSelect = document.getElementById("line");
+const userSelect = document.getElementById("user");
+const monthInput = document.getElementById("month");
+const findingsList = document.getElementById("findings-list");
+const noFindings = document.getElementById("no-findings");
+const banner = document.getElementById("banner");
+const submitBtn = document.getElementById("submit-btn");
+
+// Ayı bugüne varsayılan olarak ayarla
+const now = new Date();
+monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+async function loadReferenceData() {
+  try {
+    const res = await fetch("/api/v1/reference-data/audit-form");
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+
+    lineSelect.innerHTML = data.production_lines.length
+      ? data.production_lines.map(l => `<option value="${l.id}">${l.code} — ${l.name}</option>`).join("")
+      : `<option value="">Kayıtlı hat yok</option>`;
+
+    userSelect.innerHTML = data.users.length
+      ? data.users.map(u => `<option value="${u.id}">${u.full_name} (${u.username})</option>`).join("")
+      : `<option value="">Kayıtlı kullanıcı yok</option>`;
+  } catch (err) {
+    showBanner("error", `Hat/kullanıcı listesi yüklenemedi: ${err.message}`);
+  }
+}
+
+function addFindingRow() {
+  const tpl = document.getElementById("finding-template");
+  const node = tpl.content.cloneNode(true);
+  node.querySelector("[data-remove]").addEventListener("click", (e) => {
+    e.target.closest("[data-finding-row]").remove();
+    toggleNoFindings();
+  });
+  findingsList.appendChild(node);
+  toggleNoFindings();
+}
+
+function toggleNoFindings() {
+  noFindings.style.display = findingsList.children.length ? "none" : "block";
+}
+
+document.getElementById("add-finding-btn").addEventListener("click", addFindingRow);
+toggleNoFindings();
+
+function showBanner(type, html) {
+  banner.className = `banner show ${type}`;
+  banner.innerHTML = html;
+}
+
+document.getElementById("audit-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  banner.className = "banner";
+
+  const findings = [...findingsList.querySelectorAll("[data-finding-row]")].map(row => ({
+    description: row.querySelector("[data-desc]").value.trim(),
+    severity: row.querySelector("[data-severity]").value,
+  })).filter(f => f.description.length > 0);
+
+  const payload = {
+    production_line_id: Number(lineSelect.value),
+    audited_by_user_id: Number(userSelect.value),
+    audit_month: monthInput.value, // <input type="month"> zaten "YYYY-MM" verir
+    findings,
+  };
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Kaydediliyor…";
+
+  try {
+    const res = await fetch("/api/v1/audits", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const body = await res.json();
+
+    if (!res.ok) {
+      throw new Error(body.detail || "Kayıt başarısız");
+    }
+
+    showBanner("success", `Denetim kaydedildi (#${body.id}, ${body.findings.length} bulgu). <a href="/quality-dashboard">Dashboard'da gör &rarr;</a>`);
+    findingsList.innerHTML = "";
+    toggleNoFindings();
+    document.getElementById("audit-form").reset();
+    monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  } catch (err) {
+    showBanner("error", `Kaydedilemedi: ${err.message}`);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Denetimi Kaydet";
+  }
+});
+
+loadReferenceData();
+</script>
+</body>
+</html>
