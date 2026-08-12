@@ -61,7 +61,7 @@
   .sev-label { font-size: 12.5px; font-family: var(--font-mono); display: flex; align-items: center; gap: 8px; }
   .sev-label i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
   .sev-track { height: 10px; background: var(--bg); border-radius: 5px; overflow: hidden; border: 1px solid var(--border); }
-  .sev-fill { height: 100%; border-radius: 5px; transition: width .4s ease; }
+  .sev-fill { width: 100%; height: 100%; border-radius: 5px; transform: scaleX(0); transform-origin: left; transition: transform .4s ease; }
   .sev-count { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 13px; }
 
   .chart-scroll { overflow-x: auto; margin: 14px -4px 0; padding: 0 4px 6px; }
@@ -162,16 +162,23 @@ function render(data) {
   `;
 
   const sevRowsEl = document.getElementById("sev-rows");
+  const fills = [];
   sevRows.forEach(r => {
     const pct = (r.count / sevTotal) * 100;
     const row = document.createElement("div");
     row.className = "sev-item";
     row.innerHTML = `
       <div class="sev-label"><i style="background:${r.color}"></i>${r.label}</div>
-      <div class="sev-track"><div class="sev-fill" style="width:${pct}%; background:${r.color}"></div></div>
+      <div class="sev-track"><div class="sev-fill" style="background:${r.color}"></div></div>
       <div class="sev-count">${r.count}</div>
     `;
     sevRowsEl.appendChild(row);
+    fills.push({ el: row.querySelector(".sev-fill"), pct });
+  });
+  // transform: scaleX ile animasyon (width yerine) — layout thrash yaratmaz.
+  // Başlangıç durumu (scaleX(0)) CSS'te tanımlı; bir sonraki frame'de hedefe geçiriyoruz ki transition tetiklensin.
+  requestAnimationFrame(() => {
+    fills.forEach(f => { f.el.style.transform = `scaleX(${f.pct / 100})`; });
   });
 
   drawMonthly(data.monthly);
