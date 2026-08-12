@@ -1,12 +1,27 @@
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.presentation.api.v1.routers.tv_router import router as tv_router
 from app.presentation.api.v1.routers.audit_router import router as audit_router
+from app.presentation.api.v1.routers.quality_dashboard_router import router as quality_dashboard_router
 
 app = FastAPI(title="QualiTV API", version="0.1.0")
 
 app.include_router(tv_router, prefix="/api/v1")
 app.include_router(audit_router, prefix="/api/v1")
+app.include_router(quality_dashboard_router, prefix="/api/v1")
+
+STATIC_DIR = Path(__file__).resolve().parent / "presentation" / "static"
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+@app.get("/quality-dashboard")
+def quality_dashboard_page():
+    """Kalite dashboard'unun kendi sayfası — üretim/TV ekranlarından ayrı, bağımsız bir rota."""
+    return FileResponse(STATIC_DIR / "quality-dashboard.html")
 
 
 @app.get("/health")
