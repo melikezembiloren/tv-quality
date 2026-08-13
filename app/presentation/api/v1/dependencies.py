@@ -24,6 +24,7 @@ from app.application.use_cases.get_quality_dashboard_summary import GetQualityDa
 from app.application.use_cases.get_audit_form_reference_data import GetAuditFormReferenceDataUseCase
 from app.application.use_cases.record_inspection import RecordInspectionUseCase
 from app.application.use_cases.get_defect_dashboard_summary import GetDefectDashboardSummaryUseCase
+from app.application.use_cases.list_inspections import ListInspectionsUseCase
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -77,3 +78,8 @@ def get_record_inspection_use_case(db: Session) -> RecordInspectionUseCase:
 def get_defect_dashboard_summary_use_case(db: Session) -> GetDefectDashboardSummaryUseCase:
     repository = SqlAlchemyDefectDashboardRepository(db)
     return GetDefectDashboardSummaryUseCase(repository)
+
+
+def get_list_inspections_use_case(db: Session) -> ListInspectionsUseCase:
+    repository = SqlAlchemyInspectionRepository(db)
+    return ListInspectionsUseCase(repository)

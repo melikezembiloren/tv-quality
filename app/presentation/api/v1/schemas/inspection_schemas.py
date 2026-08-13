@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 
 
@@ -15,3 +17,12 @@ class InspectionResponse(BaseModel):
     tv_status: str
     result: str
     defect_reason: str | None
+
+
+class InspectionListItemResponse(BaseModel):
+    id: int
+    tv_serial_number: str
+    result: str
+    defect_reason: str | None
+    inspector_name: str
+    inspected_at: datetime

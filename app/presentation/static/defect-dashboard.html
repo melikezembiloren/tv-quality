@@ -69,6 +69,21 @@
   .reason-fill { width: 100%; height: 100%; background: var(--accent-2); border-radius: 5px; transform: scaleX(0); transform-origin: left; transition: transform .4s ease; }
   .reason-count { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 13px; }
 
+  .date-picker { font: inherit; font-size: 13px; color: var(--ink); background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+  .table-wrap { overflow-x: auto; margin-top: 14px; }
+  table.insp-table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 12.5px; }
+  table.insp-table thead th {
+    text-align: left; font-family: var(--font-mono); font-weight: 600; color: var(--ink-3);
+    text-transform: uppercase; letter-spacing: .04em; font-size: 10.5px; padding: 8px 10px; border-bottom: 1px solid var(--border);
+  }
+  table.insp-table tbody td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--ink); }
+  table.insp-table tbody tr:last-child td { border-bottom: none; }
+  td.serial { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  td.time { font-family: var(--font-mono); color: var(--ink-2); white-space: nowrap; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; font-family: var(--font-mono); }
+  .badge.pass { background: color-mix(in srgb, var(--good) 16%, var(--surface)); color: var(--good); }
+  .badge.fail { background: color-mix(in srgb, var(--accent-2) 16%, var(--surface)); color: var(--accent-2); }
+
   .empty { text-align: center; padding: 40px 20px; color: var(--ink-2); font-size: 13.5px; }
   .tooltip { position: fixed; pointer-events: none; background: var(--ink); color: var(--bg); font-family: var(--font-mono); font-size: 12px; line-height: 1.5; padding: 8px 10px; border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.18); opacity: 0; transition: opacity .08s ease; z-index: 20; white-space: nowrap; }
   .tooltip.show { opacity: 1; }
@@ -156,6 +171,14 @@ function render() {
       <div class="card-head"><div><h2>En Sık Görülen Hata Nedenleri</h2><div class="card-sub">Manuel girilen hata açıklamalarına göre, en sık ilk 8</div></div></div>
       <div class="reason-list" id="reason-list"></div>
     </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div><h2>Günlük Kayıt Listesi</h2><div class="card-sub">Seçilen güne ait tüm TV kontrolleri, tek tek</div></div>
+        <input type="date" class="date-picker" id="list-date" />
+      </div>
+      <div class="table-wrap" id="daily-list-wrap"><div class="empty">Yükleniyor…</div></div>
+    </section>
   `;
 
   document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -167,8 +190,50 @@ function render() {
     });
   });
 
+  const dateInput = document.getElementById("list-date");
+  const today = new Date().toISOString().slice(0, 10);
+  dateInput.value = today;
+  dateInput.addEventListener("change", () => loadDailyList(dateInput.value));
+
   drawTrend();
   renderReasons();
+  loadDailyList(today);
+}
+
+async function loadDailyList(date) {
+  const wrap = document.getElementById("daily-list-wrap");
+  wrap.innerHTML = '<div class="empty">Yükleniyor…</div>';
+  try {
+    const res = await fetch(`/api/v1/inspections?date=${date}`);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const rows = await res.json();
+
+    if (!rows.length) {
+      wrap.innerHTML = '<div class="empty">Bu tarihte hiç kayıt yok.</div>';
+      return;
+    }
+
+    wrap.innerHTML = `
+      <table class="insp-table">
+        <thead>
+          <tr><th>Saat</th><th>TV Seri No</th><th>Sonuç</th><th>Hata Nedeni</th><th>Operatör</th></tr>
+        </thead>
+        <tbody>
+          ${rows.map(r => `
+            <tr>
+              <td class="time">${new Date(r.inspected_at).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</td>
+              <td class="serial">${r.tv_serial_number}</td>
+              <td>${r.result === "PASS" ? '<span class="badge pass">OK</span>' : '<span class="badge fail">HATALI</span>'}</td>
+              <td>${r.defect_reason || "—"}</td>
+              <td>${r.inspector_name}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    wrap.innerHTML = `<div class="empty">Liste alınamadı: ${err.message}</div>`;
+  }
 }
 
 function drawTrend() {

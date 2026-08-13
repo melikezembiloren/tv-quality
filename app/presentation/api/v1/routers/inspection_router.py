@@ -1,8 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
-from app.presentation.api.v1.dependencies import get_db, get_record_inspection_use_case
-from app.presentation.api.v1.schemas.inspection_schemas import InspectionCreateRequest, InspectionResponse
+from app.presentation.api.v1.dependencies import (
+    get_db,
+    get_record_inspection_use_case,
+    get_list_inspections_use_case,
+)
+from app.presentation.api.v1.schemas.inspection_schemas import (
+    InspectionCreateRequest,
+    InspectionResponse,
+    InspectionListItemResponse,
+)
 from app.application.dto.record_inspection_dto import RecordInspectionInput
 from app.application.use_cases.record_inspection import InvalidOperatorPinError
 from app.domain.exceptions import DomainError
@@ -38,3 +46,20 @@ def record_inspection(payload: InspectionCreateRequest, db: Session = Depends(ge
         result=result.result,
         defect_reason=result.defect_reason,
     )
+
+
+@router.get("", response_model=list[InspectionListItemResponse])
+def list_inspections(date: str | None = Query(default=None, description="YYYY-MM-DD, boşsa bugün"), db: Session = Depends(get_db)):
+    use_case = get_list_inspections_use_case(db)
+    results = use_case.execute(date)
+    return [
+        InspectionListItemResponse(
+            id=r.id,
+            tv_serial_number=r.tv_serial_number,
+            result=r.result,
+            defect_reason=r.defect_reason,
+            inspector_name=r.inspector_name,
+            inspected_at=r.inspected_at,
+        )
+        for r in results
+    ]
