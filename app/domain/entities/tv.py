@@ -7,9 +7,9 @@ from app.domain.exceptions import InvalidTvStateError
 @dataclass
 class TV:
     id: int | None
-    serial_number: str          
+    serial_number: str
     line_id: int
-    product_model_id: int
+    product_model_id: int | None = None  # kalite kontrol ekranında model bilinmeyebilir
     status: str = "IN_PRODUCTION"
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 

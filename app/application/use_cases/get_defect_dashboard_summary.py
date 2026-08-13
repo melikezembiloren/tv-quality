@@ -1,0 +1,10 @@
+from app.application.interfaces.defect_dashboard_repository import DefectDashboardRepository
+from app.application.dto.defect_dashboard_dto import DefectDashboardSummary
+
+
+class GetDefectDashboardSummaryUseCase:
+    def __init__(self, repository: DefectDashboardRepository):
+        self._repository = repository
+
+    def execute(self) -> DefectDashboardSummary:
+        return self._repository.get_summary()

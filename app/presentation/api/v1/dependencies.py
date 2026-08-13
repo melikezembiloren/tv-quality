@@ -11,12 +11,19 @@ from app.infrastructure.repositories.sqlalchemy_quality_dashboard_repository imp
 from app.infrastructure.repositories.sqlalchemy_reference_data_repository import (
     SqlAlchemyReferenceDataRepository,
 )
+from app.infrastructure.repositories.sqlalchemy_operator_repository import SqlAlchemyOperatorRepository
+from app.infrastructure.repositories.sqlalchemy_inspection_repository import SqlAlchemyInspectionRepository
+from app.infrastructure.repositories.sqlalchemy_defect_dashboard_repository import (
+    SqlAlchemyDefectDashboardRepository,
+)
 from app.application.use_cases.register_tv import RegisterTVUseCase
 from app.application.use_cases.create_audit import CreateAuditUseCase
 from app.application.use_cases.get_audit_detail import GetAuditDetailUseCase
 from app.application.use_cases.list_audits import ListAuditsUseCase
 from app.application.use_cases.get_quality_dashboard_summary import GetQualityDashboardSummaryUseCase
 from app.application.use_cases.get_audit_form_reference_data import GetAuditFormReferenceDataUseCase
+from app.application.use_cases.record_inspection import RecordInspectionUseCase
+from app.application.use_cases.get_defect_dashboard_summary import GetDefectDashboardSummaryUseCase
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -57,3 +64,16 @@ def get_quality_dashboard_summary_use_case(db: Session) -> GetQualityDashboardSu
 def get_audit_form_reference_data_use_case(db: Session) -> GetAuditFormReferenceDataUseCase:
     repository = SqlAlchemyReferenceDataRepository(db)
     return GetAuditFormReferenceDataUseCase(repository)
+
+
+def get_record_inspection_use_case(db: Session) -> RecordInspectionUseCase:
+    return RecordInspectionUseCase(
+        tv_repository=SqlAlchemyTVRepository(db),
+        operator_repository=SqlAlchemyOperatorRepository(db),
+        inspection_repository=SqlAlchemyInspectionRepository(db),
+    )
+
+
+def get_defect_dashboard_summary_use_case(db: Session) -> GetDefectDashboardSummaryUseCase:
+    repository = SqlAlchemyDefectDashboardRepository(db)
+    return GetDefectDashboardSummaryUseCase(repository)

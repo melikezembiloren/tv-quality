@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kalite Kontrol — QualiTV</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg:            #f5f6f8;
+    --surface:       #ffffff;
+    --ink:           #10161c;
+    --ink-2:         #55606b;
+    --ink-3:         #8b96a1;
+    --border:        #dde2e6;
+    --accent:        #2a78d6;
+    --accent-soft:   #dce9fa;
+    --good:          #0ca30c;
+    --good-soft:     #d9f3d9;
+    --critical:      #d03b3b;
+    --critical-soft: #fbdddd;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", "Consolas", monospace;
+    --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0d1013; --surface: #15191d; --ink: #f2f4f6; --ink-2: #aab2ba; --ink-3: #757e87;
+      --border: rgba(255,255,255,0.10); --accent: #3987e5; --accent-soft: #17293f;
+      --good: #0ca30c; --good-soft: #123a17; --critical: #e66767; --critical-soft: #3a1517;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0d1013; --surface: #15191d; --ink: #f2f4f6; --ink-2: #aab2ba; --ink-3: #757e87;
+    --border: rgba(255,255,255,0.10); --accent: #3987e5; --accent-soft: #17293f;
+    --good: #0ca30c; --good-soft: #123a17; --critical: #e66767; --critical-soft: #3a1517;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  .page { max-width: 560px; margin: 0 auto; padding: 32px 20px 80px; display: flex; flex-direction: column; gap: 20px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0 0 6px; }
+  h1 { font-size: clamp(22px, 4vw, 26px); margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: var(--ink-2); font-size: 13px; }
+  a.back { color: var(--ink-2); font-size: 12.5px; text-decoration: none; }
+  a.back:hover { color: var(--accent); }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+
+  input, select, textarea {
+    font: inherit; font-size: 16px; color: var(--ink); background: var(--bg);
+    border: 1px solid var(--border); border-radius: 10px; padding: 14px 14px; width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 70px; }
+  input[type="password"] { font-family: var(--font-mono); letter-spacing: 0.3em; text-align: center; }
+
+  .result-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .result-btn {
+    font: inherit; font-size: 16px; font-weight: 700; padding: 20px 12px; border-radius: 12px;
+    border: 2px solid var(--border); background: var(--surface); color: var(--ink-2); cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .result-btn .icon { font-size: 26px; }
+  .result-btn.pass.active { border-color: var(--good); background: var(--good-soft); color: var(--good); }
+  .result-btn.fail.active { border-color: var(--critical); background: var(--critical-soft); color: var(--critical); }
+
+  #reason-field { display: none; }
+  #reason-field.show { display: flex; }
+
+  button.submit {
+    font: inherit; font-size: 16px; font-weight: 700; color: #fff;
+    background: var(--accent); border: none; border-radius: 12px;
+    padding: 16px 20px; cursor: pointer;
+  }
+  button.submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .banner { border-radius: 10px; padding: 14px 18px; font-size: 13.5px; display: none; }
+  .banner.show { display: block; }
+  .banner.success { background: color-mix(in srgb, var(--good) 14%, var(--surface)); border: 1px solid var(--good); color: var(--ink); }
+  .banner.error { background: color-mix(in srgb, var(--critical) 14%, var(--surface)); border: 1px solid var(--critical); color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <p class="eyebrow">Kalite Kontrol</p>
+    <h1>TV Kontrolü</h1>
+    <div class="sub">Üretim hattından bağımsız — her TV için OK / Hatalı işaretle</div>
+  </header>
+
+  <div class="banner" id="banner"></div>
+
+  <form id="insp-form">
+    <div class="card">
+      <div class="field">
+        <label for="serial">Seri Numarası</label>
+        <input id="serial" type="text" placeholder="örn. TZ55-00042" required autofocus />
+      </div>
+      <div class="field">
+        <label for="line">İnç / Hat</label>
+        <select id="line" required><option value="">Yükleniyor…</option></select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="field">
+        <label>Sonuç</label>
+        <div class="result-toggle">
+          <button type="button" class="result-btn pass" data-result="PASS"><span class="icon">✓</span>OK</button>
+          <button type="button" class="result-btn fail" data-result="FAIL"><span class="icon">✕</span>Hatalı</button>
+        </div>
+      </div>
+      <div class="field" id="reason-field">
+        <label for="reason">Hata Nedeni</label>
+        <textarea id="reason" placeholder="örn. Arka kapak oturmamış"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="field">
+        <label for="pin">Operatör PIN</label>
+        <input id="pin" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" required />
+      </div>
+    </div>
+
+    <button type="submit" class="submit" id="submit-btn">Kaydet</button>
+  </form>
+
+  <a class="back" href="/defect-dashboard">&rarr; Hata Analizi Dashboard'unu gör</a>
+</div>
+
+<script>
+const lineSelect = document.getElementById("line");
+const serialInput = document.getElementById("serial");
+const pinInput = document.getElementById("pin");
+const reasonField = document.getElementById("reason-field");
+const reasonInput = document.getElementById("reason");
+const banner = document.getElementById("banner");
+const submitBtn = document.getElementById("submit-btn");
+const resultBtns = document.querySelectorAll(".result-btn");
+let selectedResult = null;
+
+async function loadLines() {
+  try {
+    const res = await fetch("/api/v1/reference-data/audit-form");
+    const data = await res.json();
+    lineSelect.innerHTML = data.production_lines.length
+      ? data.production_lines.map(l => `<option value="${l.id}">${l.code} — ${l.name}</option>`).join("")
+      : `<option value="">Kayıtlı hat yok</option>`;
+  } catch (err) {
+    showBanner("error", `Hat listesi yüklenemedi: ${err.message}`);
+  }
+}
+
+resultBtns.forEach(btn => {
+  btn.addEventListener("click", () => {
+    resultBtns.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedResult = btn.dataset.result;
+    if (selectedResult === "FAIL") {
+      reasonField.classList.add("show");
+      reasonInput.required = true;
+    } else {
+      reasonField.classList.remove("show");
+      reasonInput.required = false;
+      reasonInput.value = "";
+    }
+  });
+});
+
+function showBanner(type, html) {
+  banner.className = `banner show ${type}`;
+  banner.innerHTML = html;
+}
+
+function resetForm() {
+  document.getElementById("insp-form").reset();
+  resultBtns.forEach(b => b.classList.remove("active"));
+  selectedResult = null;
+  reasonField.classList.remove("show");
+  serialInput.focus();
+}
+
+document.getElementById("insp-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  banner.className = "banner";
+
+  if (!selectedResult) {
+    showBanner("error", "Önce OK ya da Hatalı seç.");
+    return;
+  }
+
+  const payload = {
+    serial_number: serialInput.value.trim(),
+    production_line_id: Number(lineSelect.value),
+    operator_pin: pinInput.value,
+    result: selectedResult,
+    defect_reason: selectedResult === "FAIL" ? reasonInput.value.trim() : null,
+  };
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Kaydediliyor…";
+
+  try {
+    const res = await fetch("/api/v1/inspections", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.detail || "Kayıt başarısız");
+
+    showBanner("success", `Kaydedildi — TV #${body.tv_id}, sonuç: <b>${body.result}</b> (TV durumu: ${body.tv_status})`);
+    resetForm();
+  } catch (err) {
+    showBanner("error", `Kaydedilemedi: ${err.message}`);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Kaydet";
+  }
+});
+
+loadLines();
+</script>
+</body>
+</html>
