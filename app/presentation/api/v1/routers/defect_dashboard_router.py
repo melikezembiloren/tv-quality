@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.presentation.api.v1.dependencies import get_db, get_defect_dashboard_summary_use_case
@@ -13,9 +13,12 @@ router = APIRouter(prefix="/defect-dashboard", tags=["Quality Check"])
 
 
 @router.get("/summary", response_model=DefectDashboardSummaryResponse)
-def get_summary(db: Session = Depends(get_db)):
+def get_summary(
+    production_line_id: int | None = Query(default=None, description="Verilirse sadece o hattın verisi, boşsa tüm hatlar"),
+    db: Session = Depends(get_db),
+):
     use_case = get_defect_dashboard_summary_use_case(db)
-    r = use_case.execute()
+    r = use_case.execute(production_line_id)
 
     to_stat = lambda items: [PeriodStatResponse(period=i.period, inspected=i.inspected, defective=i.defective) for i in items]
     to_slices = lambda items: [CategorySliceResponse(category_name=i.category_name, count=i.count) for i in items]

@@ -7,6 +7,7 @@ from app.presentation.api.v1.dependencies import (
     get_db,
     get_record_inspection_use_case,
     get_list_inspections_use_case,
+    get_list_production_lines_use_case,
 )
 from app.presentation.api.v1.schemas.inspection_schemas import (
     InspectionCreateRequest,
@@ -50,9 +51,13 @@ def record_inspection(payload: InspectionCreateRequest, db: Session = Depends(ge
 
 
 @router.get("", response_model=list[InspectionListItemResponse])
-def list_inspections(date: str | None = Query(default=None, description="YYYY-MM-DD, boşsa bugün"), db: Session = Depends(get_db)):
+def list_inspections(
+    date: str | None = Query(default=None, description="YYYY-MM-DD, boşsa bugün"),
+    production_line_id: int | None = Query(default=None, description="Verilirse sadece o hattın kayıtları"),
+    db: Session = Depends(get_db),
+):
     use_case = get_list_inspections_use_case(db)
-    results = use_case.execute(date)
+    results = use_case.execute(date, production_line_id)
     return [
         InspectionListItemResponse(
             id=r.id,
@@ -67,14 +72,24 @@ def list_inspections(date: str | None = Query(default=None, description="YYYY-MM
 
 
 @router.get("/export")
-def export_daily_report(date: str | None = Query(default=None, description="YYYY-MM-DD, boşsa bugün"), db: Session = Depends(get_db)):
+def export_daily_report(
+    date: str | None = Query(default=None, description="YYYY-MM-DD, boşsa bugün"),
+    production_line_id: int | None = Query(default=None, description="Verilirse sadece o hattın raporu"),
+    db: Session = Depends(get_db),
+):
     """Günlük kayıt listesini, Tectone logolu resmi bir PDF rapor olarak indirir."""
     report_date = date or date_cls.today().isoformat()
 
     use_case = get_list_inspections_use_case(db)
-    results = use_case.execute(report_date)
+    results = use_case.execute(report_date, production_line_id)
 
-    pdf_bytes = generate_daily_report_pdf(report_date, results)
+    line_label = None
+    if production_line_id is not None:
+        lines = get_list_production_lines_use_case(db).execute()
+        match = next((l for l in lines if l.id == production_line_id), None)
+        line_label = f"{match.code} — {match.name}" if match else None
+
+    pdf_bytes = generate_daily_report_pdf(report_date, results, line_label=line_label)
 
     return Response(
         content=pdf_bytes,

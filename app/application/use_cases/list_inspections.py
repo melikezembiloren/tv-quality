@@ -6,5 +6,5 @@ class ListInspectionsUseCase:
     def __init__(self, repository: InspectionRepository):
         self._repository = repository
 
-    def execute(self, date: str | None) -> list[InspectionListItem]:
-        return self._repository.list_by_date(date)
+    def execute(self, date: str | None, production_line_id: int | None = None) -> list[InspectionListItem]:
+        return self._repository.list_by_date(date, production_line_id)

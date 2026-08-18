@@ -52,7 +52,7 @@ CRITICAL = colors.HexColor("#D03B3B")
 ROW_ALT = colors.HexColor("#F5F6F8")
 
 
-def generate_daily_report_pdf(report_date: str, items: list[InspectionListItem]) -> bytes:
+def generate_daily_report_pdf(report_date: str, items: list[InspectionListItem], line_label: str | None = None) -> bytes:
     buffer = BytesIO()
     doc = SimpleDocTemplate(
         buffer,
@@ -94,8 +94,14 @@ def generate_daily_report_pdf(report_date: str, items: list[InspectionListItem])
     else:
         logo = Spacer(32 * mm, 1)
 
+    title_line = f"Günlük Kalite Kontrol Raporu<br/>{report_date}"
+    if line_label:
+        title_line += f'<br/><font size="10" color="#5B6B78">{line_label}</font>'
+    else:
+        title_line += '<br/><font size="10" color="#5B6B78">Tüm Hatlar</font>'
+
     header_table = Table(
-        [[logo, Paragraph(f"Günlük Kalite Kontrol Raporu<br/>{report_date}", title_style)]],
+        [[logo, Paragraph(title_line, title_style)]],
         colWidths=[38 * mm, 140 * mm],
     )
     header_table.setStyle(TableStyle([

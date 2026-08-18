@@ -29,6 +29,7 @@ from app.application.use_cases.get_defect_dashboard_summary import GetDefectDash
 from app.application.use_cases.list_inspections import ListInspectionsUseCase
 from app.application.use_cases.list_defect_categories import ListDefectCategoriesUseCase
 from app.application.use_cases.create_defect_category import CreateDefectCategoryUseCase
+from app.application.use_cases.list_production_lines import ListProductionLinesUseCase
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -96,3 +97,8 @@ def get_list_defect_categories_use_case(db: Session) -> ListDefectCategoriesUseC
 def get_create_defect_category_use_case(db: Session) -> CreateDefectCategoryUseCase:
     repository = SqlAlchemyDefectCategoryRepository(db)
     return CreateDefectCategoryUseCase(repository)
+
+
+def get_list_production_lines_use_case(db: Session) -> ListProductionLinesUseCase:
+    repository = SqlAlchemyReferenceDataRepository(db)
+    return ListProductionLinesUseCase(repository)

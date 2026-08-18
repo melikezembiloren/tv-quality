@@ -100,6 +100,15 @@
   .pie-legend-name { color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pie-legend-count { color: var(--ink-2); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
+  .line-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-top: 4px; }
+  .line-tab-btn {
+    font: inherit; font-size: 13px; font-weight: 600; padding: 9px 16px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--ink-2); cursor: pointer;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .line-tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .line-tab-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
   .empty { text-align: center; padding: 40px 20px; color: var(--ink-2); font-size: 13.5px; }
   .tooltip { position: fixed; pointer-events: none; background: var(--ink); color: var(--bg); font-family: var(--font-mono); font-size: 12px; line-height: 1.5; padding: 8px 10px; border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.18); opacity: 0; transition: opacity .08s ease; z-index: 20; white-space: nowrap; }
   .tooltip.show { opacity: 1; }
@@ -122,6 +131,8 @@
     </div>
   </header>
 
+  <div class="line-tabs" id="line-tabs"><div class="empty" style="padding:8px 0;">Hatlar yükleniyor…</div></div>
+
   <div id="content"><div class="empty">Yükleniyor…</div></div>
 </div>
 <div class="tooltip" id="tooltip"></div>
@@ -141,11 +152,43 @@ window.addEventListener("mousemove", moveTip);
 
 let dashboardData = null;
 let activePeriod = "daily";
+let activeLineId = null; // null = Tüm Hatlar
+
+async function loadLineTabs() {
+  const wrap = document.getElementById("line-tabs");
+  try {
+    const res = await fetch("/api/v1/reference-data/production-lines");
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const lines = await res.json();
+
+    const tabs = [{ id: null, label: "Tüm Hatlar" }, ...lines.map(l => ({ id: l.id, label: `${l.code}` }))];
+    wrap.innerHTML = tabs.map(t =>
+      `<button type="button" class="line-tab-btn${t.id === activeLineId ? " active" : ""}" data-line-id="${t.id ?? ""}">${t.label}</button>`
+    ).join("");
+
+    wrap.querySelectorAll(".line-tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        activeLineId = btn.dataset.lineId ? Number(btn.dataset.lineId) : null;
+        wrap.querySelectorAll(".line-tab-btn").forEach(b => b.classList.toggle("active", b === btn));
+        loadDashboard();
+      });
+    });
+  } catch (err) {
+    wrap.innerHTML = `<div class="empty" style="padding:8px 0;">Hat listesi yüklenemedi: ${err.message}</div>`;
+  }
+}
+
+function withLineParam(url) {
+  if (activeLineId === null) return url;
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}production_line_id=${activeLineId}`;
+}
 
 async function loadDashboard() {
   const content = document.getElementById("content");
+  content.innerHTML = '<div class="empty">Yükleniyor…</div>';
   try {
-    const res = await fetch("/api/v1/defect-dashboard/summary");
+    const res = await fetch(withLineParam("/api/v1/defect-dashboard/summary"));
     if (!res.ok) throw new Error("HTTP " + res.status);
     dashboardData = await res.json();
     render();
@@ -234,10 +277,10 @@ function render() {
   const exportLink = document.getElementById("export-pdf-link");
   const today = new Date().toISOString().slice(0, 10);
   dateInput.value = today;
-  exportLink.href = `/api/v1/inspections/export?date=${today}`;
+  exportLink.href = withLineParam(`/api/v1/inspections/export?date=${today}`);
   dateInput.addEventListener("change", () => {
     loadDailyList(dateInput.value);
-    exportLink.href = `/api/v1/inspections/export?date=${dateInput.value}`;
+    exportLink.href = withLineParam(`/api/v1/inspections/export?date=${dateInput.value}`);
   });
 
   drawTrend();
@@ -355,7 +398,7 @@ async function loadDailyList(date) {
   const wrap = document.getElementById("daily-list-wrap");
   wrap.innerHTML = '<div class="empty">Yükleniyor…</div>';
   try {
-    const res = await fetch(`/api/v1/inspections?date=${date}`);
+    const res = await fetch(withLineParam(`/api/v1/inspections?date=${date}`));
     if (!res.ok) throw new Error("HTTP " + res.status);
     const rows = await res.json();
 
@@ -469,6 +512,7 @@ function renderReasons() {
   requestAnimationFrame(() => fills.forEach(f => { f.el.style.transform = `scaleX(${f.pct / 100})`; }));
 }
 
+loadLineTabs();
 loadDashboard();
 </script>
 </body>

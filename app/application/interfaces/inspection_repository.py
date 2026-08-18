@@ -6,6 +6,7 @@ from app.application.dto.inspection_list_dto import InspectionListItem
 class InspectionRepository(Protocol):
     def save(self, inspection: Inspection) -> Inspection: ...
 
-    def list_by_date(self, date: str | None) -> list[InspectionListItem]:
-        """date, 'YYYY-MM-DD' formatında — None ise bugünün kayıtları döner."""
+    def list_by_date(self, date: str | None, production_line_id: int | None = None) -> list[InspectionListItem]:
+        """date, 'YYYY-MM-DD' formatında — None ise bugünün kayıtları döner.
+        production_line_id verilirse, sadece o hatta ait TV'lerin kayıtları döner."""
         ...

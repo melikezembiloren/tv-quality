@@ -6,5 +6,5 @@ class GetDefectDashboardSummaryUseCase:
     def __init__(self, repository: DefectDashboardRepository):
         self._repository = repository
 
-    def execute(self) -> DefectDashboardSummary:
-        return self._repository.get_summary()
+    def execute(self, production_line_id: int | None = None) -> DefectDashboardSummary:
+        return self._repository.get_summary(production_line_id)

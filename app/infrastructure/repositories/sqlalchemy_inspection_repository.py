@@ -32,10 +32,10 @@ class SqlAlchemyInspectionRepository:
             inspected_at=row.inspected_at,
         )
 
-    def list_by_date(self, date: str | None) -> list[InspectionListItem]:
+    def list_by_date(self, date: str | None, production_line_id: int | None = None) -> list[InspectionListItem]:
         target_date = date or func.current_date()
 
-        rows = (
+        query = (
             self._session.query(
                 InspectionModel.id,
                 TVModel.serial_number,
@@ -47,9 +47,11 @@ class SqlAlchemyInspectionRepository:
             .join(TVModel, TVModel.id == InspectionModel.tv_id)
             .outerjoin(DefectCategoryModel, DefectCategoryModel.id == InspectionModel.defect_category_id)
             .filter(func.date(InspectionModel.inspected_at) == target_date)
-            .order_by(InspectionModel.inspected_at.desc())
-            .all()
         )
+        if production_line_id is not None:
+            query = query.filter(TVModel.line_id == production_line_id)
+
+        rows = query.order_by(InspectionModel.inspected_at.desc()).all()
 
         return [
             InspectionListItem(
