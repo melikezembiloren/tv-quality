@@ -6,4 +6,4 @@ class DefectCategory:
     id: int | None
     code: str
     name: str
-    description: str
+    description: str | None = None

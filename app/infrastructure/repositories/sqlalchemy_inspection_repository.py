@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.domain.entities.inspection import Inspection
 from app.infrastructure.db.models.inspection import InspectionModel
 from app.infrastructure.db.models.tv import TVModel
-from app.infrastructure.db.models.operator import OperatorModel
+from app.infrastructure.db.models.defect_category import DefectCategoryModel
 from app.application.dto.inspection_list_dto import InspectionListItem
 
 
@@ -15,8 +15,8 @@ class SqlAlchemyInspectionRepository:
     def save(self, inspection: Inspection) -> Inspection:
         row = InspectionModel(
             tv_id=inspection.tv_id,
-            inspector_operator_id=inspection.inspector_operator_id,
             result=inspection.result,
+            defect_category_id=inspection.defect_category_id,
             defect_reason=inspection.defect_reason,
         )
         self._session.add(row)
@@ -26,8 +26,8 @@ class SqlAlchemyInspectionRepository:
         return Inspection(
             id=row.id,
             tv_id=row.tv_id,
-            inspector_operator_id=row.inspector_operator_id,
             result=row.result,
+            defect_category_id=row.defect_category_id,
             defect_reason=row.defect_reason,
             inspected_at=row.inspected_at,
         )
@@ -40,13 +40,12 @@ class SqlAlchemyInspectionRepository:
                 InspectionModel.id,
                 TVModel.serial_number,
                 InspectionModel.result,
+                DefectCategoryModel.name,
                 InspectionModel.defect_reason,
-                OperatorModel.first_name,
-                OperatorModel.last_name,
                 InspectionModel.inspected_at,
             )
             .join(TVModel, TVModel.id == InspectionModel.tv_id)
-            .join(OperatorModel, OperatorModel.id == InspectionModel.inspector_operator_id)
+            .outerjoin(DefectCategoryModel, DefectCategoryModel.id == InspectionModel.defect_category_id)
             .filter(func.date(InspectionModel.inspected_at) == target_date)
             .order_by(InspectionModel.inspected_at.desc())
             .all()
@@ -57,9 +56,9 @@ class SqlAlchemyInspectionRepository:
                 id=r[0],
                 tv_serial_number=r[1],
                 result=r[2],
-                defect_reason=r[3],
-                inspector_name=f"{r[4]} {r[5]}",
-                inspected_at=r[6],
+                defect_category_name=r[3],
+                defect_reason=r[4],
+                inspected_at=r[5],
             )
             for r in rows
         ]

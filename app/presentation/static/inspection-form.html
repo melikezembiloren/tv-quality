@@ -48,14 +48,14 @@
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
   .field { display: flex; flex-direction: column; gap: 6px; }
   .field label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+  .field-head { display: flex; justify-content: space-between; align-items: baseline; }
 
   input, select, textarea {
     font: inherit; font-size: 16px; color: var(--ink); background: var(--bg);
     border: 1px solid var(--border); border-radius: 10px; padding: 14px 14px; width: 100%;
   }
   input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
-  textarea { resize: vertical; min-height: 70px; }
-  input[type="password"] { font-family: var(--font-mono); letter-spacing: 0.3em; text-align: center; }
+  textarea { resize: vertical; min-height: 60px; }
 
   .result-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .result-btn {
@@ -67,8 +67,20 @@
   .result-btn.pass.active { border-color: var(--good); background: var(--good-soft); color: var(--good); }
   .result-btn.fail.active { border-color: var(--critical); background: var(--critical-soft); color: var(--critical); }
 
-  #reason-field { display: none; }
-  #reason-field.show { display: flex; }
+  #fail-fields { display: none; flex-direction: column; gap: 16px; }
+  #fail-fields.show { display: flex; }
+
+  .add-category-link {
+    font: inherit; font-size: 12.5px; font-weight: 600; color: var(--accent);
+    background: none; border: none; cursor: pointer; padding: 0;
+  }
+  .add-category-row { display: none; gap: 8px; }
+  .add-category-row.show { display: flex; }
+  .add-category-row input { flex: 1; }
+  .add-category-row button {
+    font: inherit; font-size: 13px; font-weight: 700; color: #fff; background: var(--accent);
+    border: none; border-radius: 10px; padding: 0 16px; cursor: pointer; white-space: nowrap;
+  }
 
   button.submit {
     font: inherit; font-size: 16px; font-weight: 700; color: #fff;
@@ -113,16 +125,23 @@
           <button type="button" class="result-btn fail" data-result="FAIL"><span class="icon">✕</span>Hatalı</button>
         </div>
       </div>
-      <div class="field" id="reason-field">
-        <label for="reason">Hata Nedeni</label>
-        <textarea id="reason" placeholder="örn. Arka kapak oturmamış"></textarea>
-      </div>
-    </div>
 
-    <div class="card">
-      <div class="field">
-        <label for="pin">Operatör PIN</label>
-        <input id="pin" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" required />
+      <div id="fail-fields">
+        <div class="field">
+          <div class="field-head">
+            <label for="category">Hata Türü</label>
+            <button type="button" class="add-category-link" id="add-category-toggle">+ Yeni hata türü ekle</button>
+          </div>
+          <select id="category"><option value="">Yükleniyor…</option></select>
+          <div class="add-category-row" id="add-category-row">
+            <input id="new-category-name" type="text" placeholder="Yeni hata türü adı" />
+            <button type="button" id="add-category-btn">Ekle</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="note">Ek Açıklama <span style="font-weight:400;">(opsiyonel)</span></label>
+          <textarea id="note" placeholder="İstersen ek detay yaz"></textarea>
+        </div>
       </div>
     </div>
 
@@ -134,13 +153,17 @@
 
 <script>
 const lineSelect = document.getElementById("line");
+const categorySelect = document.getElementById("category");
 const serialInput = document.getElementById("serial");
-const pinInput = document.getElementById("pin");
-const reasonField = document.getElementById("reason-field");
-const reasonInput = document.getElementById("reason");
+const failFields = document.getElementById("fail-fields");
+const noteInput = document.getElementById("note");
 const banner = document.getElementById("banner");
 const submitBtn = document.getElementById("submit-btn");
 const resultBtns = document.querySelectorAll(".result-btn");
+const addCategoryToggle = document.getElementById("add-category-toggle");
+const addCategoryRow = document.getElementById("add-category-row");
+const newCategoryName = document.getElementById("new-category-name");
+const addCategoryBtn = document.getElementById("add-category-btn");
 let selectedResult = null;
 
 async function loadLines() {
@@ -155,20 +178,62 @@ async function loadLines() {
   }
 }
 
+async function loadCategories(selectId = null) {
+  try {
+    const res = await fetch("/api/v1/defect-categories");
+    const data = await res.json();
+    categorySelect.innerHTML = data.length
+      ? data.map(c => `<option value="${c.id}">${c.name}</option>`).join("")
+      : `<option value="">Henüz hata türü yok — ekleyin</option>`;
+    if (selectId) categorySelect.value = String(selectId);
+  } catch (err) {
+    showBanner("error", `Hata türü listesi yüklenemedi: ${err.message}`);
+  }
+}
+
 resultBtns.forEach(btn => {
   btn.addEventListener("click", () => {
     resultBtns.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     selectedResult = btn.dataset.result;
     if (selectedResult === "FAIL") {
-      reasonField.classList.add("show");
-      reasonInput.required = true;
+      failFields.classList.add("show");
+      categorySelect.required = true;
     } else {
-      reasonField.classList.remove("show");
-      reasonInput.required = false;
-      reasonInput.value = "";
+      failFields.classList.remove("show");
+      categorySelect.required = false;
+      categorySelect.value = "";
+      noteInput.value = "";
+      addCategoryRow.classList.remove("show");
     }
   });
+});
+
+addCategoryToggle.addEventListener("click", () => {
+  addCategoryRow.classList.toggle("show");
+  if (addCategoryRow.classList.contains("show")) newCategoryName.focus();
+});
+
+addCategoryBtn.addEventListener("click", async () => {
+  const name = newCategoryName.value.trim();
+  if (!name) return;
+  addCategoryBtn.disabled = true;
+  try {
+    const res = await fetch("/api/v1/defect-categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.detail || "Eklenemedi");
+    await loadCategories(body.id);
+    newCategoryName.value = "";
+    addCategoryRow.classList.remove("show");
+  } catch (err) {
+    showBanner("error", `Hata türü eklenemedi: ${err.message}`);
+  } finally {
+    addCategoryBtn.disabled = false;
+  }
 });
 
 function showBanner(type, html) {
@@ -180,7 +245,8 @@ function resetForm() {
   document.getElementById("insp-form").reset();
   resultBtns.forEach(b => b.classList.remove("active"));
   selectedResult = null;
-  reasonField.classList.remove("show");
+  failFields.classList.remove("show");
+  addCategoryRow.classList.remove("show");
   serialInput.focus();
 }
 
@@ -192,13 +258,17 @@ document.getElementById("insp-form").addEventListener("submit", async (e) => {
     showBanner("error", "Önce OK ya da Hatalı seç.");
     return;
   }
+  if (selectedResult === "FAIL" && !categorySelect.value) {
+    showBanner("error", "Hatalı için bir hata türü seç.");
+    return;
+  }
 
   const payload = {
     serial_number: serialInput.value.trim(),
     production_line_id: Number(lineSelect.value),
-    operator_pin: pinInput.value,
     result: selectedResult,
-    defect_reason: selectedResult === "FAIL" ? reasonInput.value.trim() : null,
+    defect_category_id: selectedResult === "FAIL" ? Number(categorySelect.value) : null,
+    defect_reason: selectedResult === "FAIL" ? (noteInput.value.trim() || null) : null,
   };
 
   submitBtn.disabled = true;
@@ -224,6 +294,7 @@ document.getElementById("insp-form").addEventListener("submit", async (e) => {
 });
 
 loadLines();
+loadCategories();
 </script>
 </body>
 </html>

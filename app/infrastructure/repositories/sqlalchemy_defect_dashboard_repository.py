@@ -2,7 +2,13 @@ from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 
 from app.infrastructure.db.models.inspection import InspectionModel
-from app.application.dto.defect_dashboard_dto import DefectDashboardSummary, PeriodStat, ReasonFrequency
+from app.infrastructure.db.models.defect_category import DefectCategoryModel
+from app.application.dto.defect_dashboard_dto import (
+    DefectDashboardSummary,
+    PeriodStat,
+    ReasonFrequency,
+    CategorySlice,
+)
 
 
 class SqlAlchemyDefectDashboardRepository:
@@ -25,10 +31,12 @@ class SqlAlchemyDefectDashboardRepository:
         weekly = self._period_stats(func.to_char(InspectionModel.inspected_at, "IYYY-\"W\"IW"), defective_case)
         monthly = self._period_stats(func.to_char(InspectionModel.inspected_at, "YYYY-MM"), defective_case)
 
+        # En sık görülen hata türleri — artık serbest metin değil, kataloğa göre (daha tutarlı)
         reason_rows = (
-            self._session.query(InspectionModel.defect_reason, func.count(InspectionModel.id))
-            .filter(InspectionModel.result == "FAIL", InspectionModel.defect_reason.isnot(None))
-            .group_by(InspectionModel.defect_reason)
+            self._session.query(DefectCategoryModel.name, func.count(InspectionModel.id))
+            .join(DefectCategoryModel, DefectCategoryModel.id == InspectionModel.defect_category_id)
+            .filter(InspectionModel.result == "FAIL")
+            .group_by(DefectCategoryModel.name)
             .order_by(func.count(InspectionModel.id).desc())
             .limit(8)
             .all()
@@ -43,6 +51,9 @@ class SqlAlchemyDefectDashboardRepository:
             weekly=weekly,
             monthly=monthly,
             top_reasons=top_reasons,
+            category_breakdown_daily=self._category_breakdown("day"),
+            category_breakdown_weekly=self._category_breakdown("week"),
+            category_breakdown_monthly=self._category_breakdown("month"),
         )
 
     def _period_stats(self, period_expr, defective_case) -> list[PeriodStat]:
@@ -57,3 +68,16 @@ class SqlAlchemyDefectDashboardRepository:
             .all()
         )
         return [PeriodStat(period=p, inspected=i, defective=int(d or 0)) for p, i, d in rows]
+
+    def _category_breakdown(self, trunc_unit: str) -> list[CategorySlice]:
+        """trunc_unit: 'day' | 'week' | 'month' — o anki pencere (bugün/bu hafta/bu ay) için hata türü dağılımı."""
+        window_start = func.date_trunc(trunc_unit, func.now())
+        rows = (
+            self._session.query(DefectCategoryModel.name, func.count(InspectionModel.id))
+            .join(DefectCategoryModel, DefectCategoryModel.id == InspectionModel.defect_category_id)
+            .filter(InspectionModel.result == "FAIL", InspectionModel.inspected_at >= window_start)
+            .group_by(DefectCategoryModel.name)
+            .order_by(func.count(InspectionModel.id).desc())
+            .all()
+        )
+        return [CategorySlice(category_name=r, count=c) for r, c in rows]

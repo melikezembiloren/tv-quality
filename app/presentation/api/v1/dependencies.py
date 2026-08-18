@@ -11,10 +11,12 @@ from app.infrastructure.repositories.sqlalchemy_quality_dashboard_repository imp
 from app.infrastructure.repositories.sqlalchemy_reference_data_repository import (
     SqlAlchemyReferenceDataRepository,
 )
-from app.infrastructure.repositories.sqlalchemy_operator_repository import SqlAlchemyOperatorRepository
 from app.infrastructure.repositories.sqlalchemy_inspection_repository import SqlAlchemyInspectionRepository
 from app.infrastructure.repositories.sqlalchemy_defect_dashboard_repository import (
     SqlAlchemyDefectDashboardRepository,
+)
+from app.infrastructure.repositories.sqlalchemy_defect_category_repository import (
+    SqlAlchemyDefectCategoryRepository,
 )
 from app.application.use_cases.register_tv import RegisterTVUseCase
 from app.application.use_cases.create_audit import CreateAuditUseCase
@@ -25,6 +27,8 @@ from app.application.use_cases.get_audit_form_reference_data import GetAuditForm
 from app.application.use_cases.record_inspection import RecordInspectionUseCase
 from app.application.use_cases.get_defect_dashboard_summary import GetDefectDashboardSummaryUseCase
 from app.application.use_cases.list_inspections import ListInspectionsUseCase
+from app.application.use_cases.list_defect_categories import ListDefectCategoriesUseCase
+from app.application.use_cases.create_defect_category import CreateDefectCategoryUseCase
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -70,7 +74,6 @@ def get_audit_form_reference_data_use_case(db: Session) -> GetAuditFormReference
 def get_record_inspection_use_case(db: Session) -> RecordInspectionUseCase:
     return RecordInspectionUseCase(
         tv_repository=SqlAlchemyTVRepository(db),
-        operator_repository=SqlAlchemyOperatorRepository(db),
         inspection_repository=SqlAlchemyInspectionRepository(db),
     )
 
@@ -83,3 +86,13 @@ def get_defect_dashboard_summary_use_case(db: Session) -> GetDefectDashboardSumm
 def get_list_inspections_use_case(db: Session) -> ListInspectionsUseCase:
     repository = SqlAlchemyInspectionRepository(db)
     return ListInspectionsUseCase(repository)
+
+
+def get_list_defect_categories_use_case(db: Session) -> ListDefectCategoriesUseCase:
+    repository = SqlAlchemyDefectCategoryRepository(db)
+    return ListDefectCategoriesUseCase(repository)
+
+
+def get_create_defect_category_use_case(db: Session) -> CreateDefectCategoryUseCase:
+    repository = SqlAlchemyDefectCategoryRepository(db)
+    return CreateDefectCategoryUseCase(repository)

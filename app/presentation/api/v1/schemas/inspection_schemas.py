@@ -6,9 +6,9 @@ from pydantic import BaseModel
 class InspectionCreateRequest(BaseModel):
     serial_number: str
     production_line_id: int
-    operator_pin: str
     result: str  # "PASS" ya da "FAIL"
-    defect_reason: str | None = None
+    defect_category_id: int | None = None
+    defect_reason: str | None = None  # ek açıklama, opsiyonel
 
 
 class InspectionResponse(BaseModel):
@@ -16,6 +16,7 @@ class InspectionResponse(BaseModel):
     tv_id: int
     tv_status: str
     result: str
+    defect_category_id: int | None
     defect_reason: str | None
 
 
@@ -23,6 +24,6 @@ class InspectionListItemResponse(BaseModel):
     id: int
     tv_serial_number: str
     result: str
+    defect_category_name: str | None
     defect_reason: str | None
-    inspector_name: str
     inspected_at: datetime

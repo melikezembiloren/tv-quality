@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from datetime import date as date_cls
+
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from sqlalchemy.orm import Session
 
 from app.presentation.api.v1.dependencies import (
@@ -12,8 +14,8 @@ from app.presentation.api.v1.schemas.inspection_schemas import (
     InspectionListItemResponse,
 )
 from app.application.dto.record_inspection_dto import RecordInspectionInput
-from app.application.use_cases.record_inspection import InvalidOperatorPinError
 from app.domain.exceptions import DomainError
+from app.presentation.pdf.daily_report import generate_daily_report_pdf
 
 # Bilinçli olarak /tvs, /audits gibi diğer köklerle hiç kesişmiyor —
 # üretim hattı ekranlarından bağımsız kalite kontrol akışı.
@@ -27,15 +29,13 @@ def record_inspection(payload: InspectionCreateRequest, db: Session = Depends(ge
     input_data = RecordInspectionInput(
         serial_number=payload.serial_number,
         production_line_id=payload.production_line_id,
-        operator_pin=payload.operator_pin,
         result=payload.result,
+        defect_category_id=payload.defect_category_id,
         defect_reason=payload.defect_reason,
     )
 
     try:
         result = use_case.execute(input_data)
-    except InvalidOperatorPinError as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
     except DomainError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
@@ -44,6 +44,7 @@ def record_inspection(payload: InspectionCreateRequest, db: Session = Depends(ge
         tv_id=result.tv_id,
         tv_status=result.tv_status,
         result=result.result,
+        defect_category_id=result.defect_category_id,
         defect_reason=result.defect_reason,
     )
 
@@ -57,9 +58,26 @@ def list_inspections(date: str | None = Query(default=None, description="YYYY-MM
             id=r.id,
             tv_serial_number=r.tv_serial_number,
             result=r.result,
+            defect_category_name=r.defect_category_name,
             defect_reason=r.defect_reason,
-            inspector_name=r.inspector_name,
             inspected_at=r.inspected_at,
         )
         for r in results
     ]
+
+
+@router.get("/export")
+def export_daily_report(date: str | None = Query(default=None, description="YYYY-MM-DD, boşsa bugün"), db: Session = Depends(get_db)):
+    """Günlük kayıt listesini, Tectone logolu resmi bir PDF rapor olarak indirir."""
+    report_date = date or date_cls.today().isoformat()
+
+    use_case = get_list_inspections_use_case(db)
+    results = use_case.execute(report_date)
+
+    pdf_bytes = generate_daily_report_pdf(report_date, results)
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="gunluk-kalite-raporu-{report_date}.pdf"'},
+    )

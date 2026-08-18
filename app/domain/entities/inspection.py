@@ -7,7 +7,7 @@ VALID_RESULTS = ("PASS", "FAIL")
 
 
 class InvalidInspectionResultError(DomainError):
-    """result, PASS/FAIL dışında bir değerse ya da hata nedeniyle tutarsızsa fırlatılır."""
+    """result, PASS/FAIL dışında bir değerse ya da hata bilgisiyle tutarsızsa fırlatılır."""
     pass
 
 
@@ -15,9 +15,9 @@ class InvalidInspectionResultError(DomainError):
 class Inspection:
     id: int | None
     tv_id: int
-    inspector_operator_id: int
     result: str  # "PASS" ya da "FAIL"
-    defect_reason: str | None = None
+    defect_category_id: int | None = None   # hata türü kataloğundan seçilen tür — FAIL'de zorunlu
+    defect_reason: str | None = None        # ek açıklama — her zaman opsiyonel, serbest metin
     inspected_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def __post_init__(self) -> None:
@@ -25,7 +25,7 @@ class Inspection:
             raise InvalidInspectionResultError(
                 f"result şunlardan biri olmalı: {VALID_RESULTS}, alınan: {self.result!r}"
             )
-        if self.result == "FAIL" and not self.defect_reason:
-            raise InvalidInspectionResultError("FAIL sonucunda hata nedeni (defect_reason) zorunludur")
-        if self.result == "PASS" and self.defect_reason:
-            raise InvalidInspectionResultError("PASS sonucunda hata nedeni girilemez")
+        if self.result == "FAIL" and self.defect_category_id is None:
+            raise InvalidInspectionResultError("FAIL sonucunda hata türü (defect_category_id) zorunludur")
+        if self.result == "PASS" and self.defect_category_id is not None:
+            raise InvalidInspectionResultError("PASS sonucunda hata türü girilemez")

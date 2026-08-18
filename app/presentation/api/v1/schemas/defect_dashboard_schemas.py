@@ -12,6 +12,11 @@ class ReasonFrequencyResponse(BaseModel):
     count: int
 
 
+class CategorySliceResponse(BaseModel):
+    category_name: str
+    count: int
+
+
 class DefectDashboardSummaryResponse(BaseModel):
     total_inspected: int
     total_defective: int
@@ -20,3 +25,6 @@ class DefectDashboardSummaryResponse(BaseModel):
     weekly: list[PeriodStatResponse]
     monthly: list[PeriodStatResponse]
     top_reasons: list[ReasonFrequencyResponse]
+    category_breakdown_daily: list[CategorySliceResponse]
+    category_breakdown_weekly: list[CategorySliceResponse]
+    category_breakdown_monthly: list[CategorySliceResponse]

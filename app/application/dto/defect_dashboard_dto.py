@@ -15,6 +15,12 @@ class ReasonFrequency:
 
 
 @dataclass
+class CategorySlice:
+    category_name: str
+    count: int
+
+
+@dataclass
 class DefectDashboardSummary:
     total_inspected: int
     total_defective: int
@@ -23,3 +29,7 @@ class DefectDashboardSummary:
     weekly: list[PeriodStat] = field(default_factory=list)
     monthly: list[PeriodStat] = field(default_factory=list)
     top_reasons: list[ReasonFrequency] = field(default_factory=list)
+    # hata türü dağılımı, üç ayrı zaman penceresi için (bugün / bu hafta / bu ay)
+    category_breakdown_daily: list[CategorySlice] = field(default_factory=list)
+    category_breakdown_weekly: list[CategorySlice] = field(default_factory=list)
+    category_breakdown_monthly: list[CategorySlice] = field(default_factory=list)
