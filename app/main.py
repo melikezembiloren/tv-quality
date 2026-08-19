@@ -11,6 +11,7 @@ from app.presentation.api.v1.routers.reference_data_router import router as refe
 from app.presentation.api.v1.routers.inspection_router import router as inspection_router
 from app.presentation.api.v1.routers.defect_dashboard_router import router as defect_dashboard_router
 from app.presentation.api.v1.routers.defect_category_router import router as defect_category_router
+from app.presentation.api.v1.routers.report_router import router as report_router
 
 app = FastAPI(title="QualiTV API", version="0.1.0")
 
@@ -21,6 +22,7 @@ app.include_router(reference_data_router, prefix="/api/v1")
 app.include_router(inspection_router, prefix="/api/v1")
 app.include_router(defect_dashboard_router, prefix="/api/v1")
 app.include_router(defect_category_router, prefix="/api/v1")
+app.include_router(report_router, prefix="/api/v1")
 
 STATIC_DIR = Path(__file__).resolve().parent / "presentation" / "static"
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -59,6 +61,12 @@ def inspection_form_page():
 def defect_dashboard_page():
     """Hata analizi dashboard'u — günlük/haftalık/aylık trend, audit modülünden ayrı."""
     return _serve_page("defect-dashboard.html")
+
+
+@app.get("/tv-history")
+def tv_history_page():
+    """Seri numarasıyla tek bir TV'nin hattını ve kontrol geçmişini sorgulama ekranı."""
+    return _serve_page("tv-history.html")
 
 
 @app.get("/health")

@@ -113,6 +113,9 @@
   .tooltip { position: fixed; pointer-events: none; background: var(--ink); color: var(--bg); font-family: var(--font-mono); font-size: 12px; line-height: 1.5; padding: 8px 10px; border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.18); opacity: 0; transition: opacity .08s ease; z-index: 20; white-space: nowrap; }
   .tooltip.show { opacity: 1; }
   a.new-link { font-size: 13px; font-weight: 600; color: #fff; background: var(--accent); border-radius: 8px; padding: 9px 16px; text-decoration: none; white-space: nowrap; }
+  a.secondary-link { font-size: 13px; font-weight: 600; color: var(--accent); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 15px; text-decoration: none; white-space: nowrap; }
+  a.secondary-link:hover { border-color: var(--accent); }
+  .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 </style>
 </head>
 <body>
@@ -123,10 +126,14 @@
         <p class="eyebrow">Kalite Kontrol &middot; Hata Analizi</p>
         <h1>Hata Analizi Dashboard'u</h1>
       </div>
-      <a href="/inspections/new?v=2" class="new-link">+ Yeni Kontrol</a>
+      <div class="header-actions">
+        <a href="/tv-history" class="secondary-link">🔍 TV Sorgula</a>
+        <a href="/api/v1/reports/monthly-summary" class="secondary-link" target="_blank" rel="noopener">📄 Aylık Özet (PDF)</a>
+        <a href="/inspections/new?v=2" class="new-link">+ Yeni Kayıt</a>
+      </div>
     </div>
     <div class="sub" style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
-      <span>TV kontrol (OK/Hatalı) kayıtlarına dayanır — audit modülünden ayrı</span>
+      <span>TV kontrol (OK/Hatalı) kayıtlarına dayanır </span>
       <span class="live-dot"><i></i>Canlı veri</span>
     </div>
   </header>

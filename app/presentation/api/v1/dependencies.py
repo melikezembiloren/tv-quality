@@ -18,6 +18,10 @@ from app.infrastructure.repositories.sqlalchemy_defect_dashboard_repository impo
 from app.infrastructure.repositories.sqlalchemy_defect_category_repository import (
     SqlAlchemyDefectCategoryRepository,
 )
+from app.infrastructure.repositories.sqlalchemy_tv_history_repository import SqlAlchemyTvHistoryRepository
+from app.infrastructure.repositories.sqlalchemy_monthly_report_repository import (
+    SqlAlchemyMonthlyReportRepository,
+)
 from app.application.use_cases.register_tv import RegisterTVUseCase
 from app.application.use_cases.create_audit import CreateAuditUseCase
 from app.application.use_cases.get_audit_detail import GetAuditDetailUseCase
@@ -30,6 +34,8 @@ from app.application.use_cases.list_inspections import ListInspectionsUseCase
 from app.application.use_cases.list_defect_categories import ListDefectCategoriesUseCase
 from app.application.use_cases.create_defect_category import CreateDefectCategoryUseCase
 from app.application.use_cases.list_production_lines import ListProductionLinesUseCase
+from app.application.use_cases.get_tv_history import GetTvHistoryUseCase
+from app.application.use_cases.get_monthly_report import GetMonthlyReportUseCase
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -102,3 +108,13 @@ def get_create_defect_category_use_case(db: Session) -> CreateDefectCategoryUseC
 def get_list_production_lines_use_case(db: Session) -> ListProductionLinesUseCase:
     repository = SqlAlchemyReferenceDataRepository(db)
     return ListProductionLinesUseCase(repository)
+
+
+def get_tv_history_use_case(db: Session) -> GetTvHistoryUseCase:
+    repository = SqlAlchemyTvHistoryRepository(db)
+    return GetTvHistoryUseCase(repository)
+
+
+def get_monthly_report_use_case(db: Session) -> GetMonthlyReportUseCase:
+    repository = SqlAlchemyMonthlyReportRepository(db)
+    return GetMonthlyReportUseCase(repository)

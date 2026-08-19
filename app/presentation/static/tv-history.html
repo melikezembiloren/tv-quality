@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TV Sorgula — QualiTV</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg:            #f5f6f8;
+    --surface:       #ffffff;
+    --ink:           #10161c;
+    --ink-2:         #55606b;
+    --ink-3:         #8b96a1;
+    --border:        #dde2e6;
+    --accent:        #2a78d6;
+    --accent-soft:   #dce9fa;
+    --good:          #0ca30c;
+    --critical:      #d03b3b;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", "Consolas", monospace;
+    --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0d1013; --surface: #15191d; --ink: #f2f4f6; --ink-2: #aab2ba; --ink-3: #757e87;
+      --border: rgba(255,255,255,0.10); --accent: #3987e5; --accent-soft: #17293f;
+      --good: #0ca30c; --critical: #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0d1013; --surface: #15191d; --ink: #f2f4f6; --ink-2: #aab2ba; --ink-3: #757e87;
+    --border: rgba(255,255,255,0.10); --accent: #3987e5; --accent-soft: #17293f;
+    --good: #0ca30c; --critical: #e66767;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  .page { max-width: 760px; margin: 0 auto; padding: 40px 24px 80px; display: flex; flex-direction: column; gap: 24px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0 0 8px; }
+  h1 { font-size: clamp(22px, 3vw, 28px); margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: var(--ink-2); font-size: 13.5px; }
+  a.back { color: var(--ink-2); font-size: 12.5px; text-decoration: none; }
+  a.back:hover { color: var(--accent); }
+
+  .search-row { display: flex; gap: 10px; }
+  input#serial-input {
+    font: inherit; font-size: 15px; color: var(--ink); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; flex: 1;
+    font-family: var(--font-mono); letter-spacing: 0.02em;
+  }
+  input#serial-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+  button.search-btn {
+    font: inherit; font-size: 14.5px; font-weight: 600; color: #fff;
+    background: var(--accent); border: none; border-radius: 8px;
+    padding: 12px 22px; cursor: pointer; white-space: nowrap;
+  }
+  button.search-btn:hover { opacity: 0.92; }
+  button.search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  section.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 22px 24px 20px; }
+  h2 { font-size: 15.5px; font-weight: 600; margin: 0; }
+  .card-sub { font-size: 12.5px; color: var(--ink-2); }
+
+  .tv-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+  @media (max-width: 620px) { .tv-meta { grid-template-columns: repeat(2, 1fr); } }
+  .meta-item { background: var(--surface); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+  .meta-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); font-family: var(--font-mono); }
+  .meta-value { font-family: var(--font-mono); font-size: 15px; font-weight: 600; }
+  .status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; font-family: var(--font-mono); width: fit-content; }
+  .status-badge.IN_PRODUCTION { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); color: var(--accent); }
+  .status-badge.FAIL, .status-badge.SCRAP { background: color-mix(in srgb, var(--critical) 16%, var(--surface)); color: var(--critical); }
+  .status-badge.REWORK { background: color-mix(in srgb, var(--good) 16%, var(--surface)); color: var(--good); }
+
+  .table-wrap { overflow-x: auto; }
+  table.insp-table { border-collapse: collapse; width: 100%; min-width: 480px; font-size: 12.5px; }
+  table.insp-table thead th {
+    text-align: left; font-family: var(--font-mono); font-weight: 600; color: var(--ink-3);
+    text-transform: uppercase; letter-spacing: .04em; font-size: 10.5px; padding: 8px 10px; border-bottom: 1px solid var(--border);
+  }
+  table.insp-table tbody td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--ink); }
+  table.insp-table tbody tr:last-child td { border-bottom: none; }
+  td.time { font-family: var(--font-mono); color: var(--ink-2); white-space: nowrap; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; font-family: var(--font-mono); }
+  .badge.pass { background: color-mix(in srgb, var(--good) 16%, var(--surface)); color: var(--good); }
+  .badge.fail { background: color-mix(in srgb, var(--critical) 16%, var(--surface)); color: var(--critical); }
+
+  .empty { text-align: center; padding: 40px 20px; color: var(--ink-2); font-size: 13.5px; }
+  .empty.error { color: var(--critical); }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <p class="eyebrow">Kalite Kontrol &middot; TV Geçmişi</p>
+    <h1>TV Sorgula</h1>
+    <div class="sub">Seri numarasını gir, o TV'nin hattını ve tüm kontrol geçmişini gör.</div>
+  </header>
+
+  <form id="search-form" class="search-row">
+    <input id="serial-input" type="text" placeholder="Örn. TLA018710QX0130001" autocomplete="off" autofocus />
+    <button type="submit" class="search-btn" id="search-btn">Ara</button>
+  </form>
+
+  <div id="result"></div>
+
+  <a class="back" href="/defect-dashboard">&larr; Hata Analizi Dashboard'una dön</a>
+</div>
+
+<script>
+const form = document.getElementById("search-form");
+const input = document.getElementById("serial-input");
+const btn = document.getElementById("search-btn");
+const resultEl = document.getElementById("result");
+
+function statusLabel(status) {
+  return { IN_PRODUCTION: "Üretimde", FAIL: "Hatalı", SCRAP: "Hurda", REWORK: "Yeniden İşlem" }[status] || status;
+}
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const serial = input.value.trim();
+  if (!serial) return;
+
+  btn.disabled = true;
+  btn.textContent = "Aranıyor…";
+  resultEl.innerHTML = '<div class="empty">Aranıyor…</div>';
+
+  try {
+    const res = await fetch(`/api/v1/tvs/${encodeURIComponent(serial)}/history`);
+    if (res.status === 404) {
+      resultEl.innerHTML = `<div class="empty error">"${serial}" seri numaralı bir TV bulunamadı.</div>`;
+      return;
+    }
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    render(data);
+  } catch (err) {
+    resultEl.innerHTML = `<div class="empty error">Sorgulanamadı: ${err.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Ara";
+  }
+});
+
+function render(data) {
+  const createdStr = new Date(data.created_at).toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" });
+
+  const rowsHtml = data.inspections.length
+    ? data.inspections.map(i => `
+        <tr>
+          <td class="time">${new Date(i.inspected_at).toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })}</td>
+          <td>${i.result === "PASS" ? '<span class="badge pass">OK</span>' : '<span class="badge fail">HATALI</span>'}</td>
+          <td>${i.defect_category_name || "—"}</td>
+          <td>${i.defect_reason || "—"}</td>
+        </tr>
+      `).join("")
+    : `<tr><td colspan="4" style="text-align:center; color:var(--ink-2); padding:20px;">Bu TV için hiç kontrol kaydı yok.</td></tr>`;
+
+  resultEl.innerHTML = `
+    <section class="card">
+      <div class="tv-meta">
+        <div class="meta-item"><div class="meta-label">Seri No</div><div class="meta-value">${data.serial_number}</div></div>
+        <div class="meta-item"><div class="meta-label">Üretim Hattı</div><div class="meta-value">${data.line_code} — ${data.line_name}</div></div>
+        <div class="meta-item"><div class="meta-label">Durum</div><div class="meta-value"><span class="status-badge ${data.status}">${statusLabel(data.status)}</span></div></div>
+        <div class="meta-item"><div class="meta-label">Üretim Tarihi</div><div class="meta-value" style="font-size:13px;">${createdStr}</div></div>
+      </div>
+      <h2 style="margin-bottom:10px;">Kontrol Geçmişi <span class="card-sub" style="font-weight:400;">(${data.inspections.length} kayıt)</span></h2>
+      <div class="table-wrap">
+        <table class="insp-table">
+          <thead><tr><th>Tarih / Saat</th><th>Sonuç</th><th>Hata Türü</th><th>Ek Açıklama</th></tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+</script>
+</body>
+</html>
