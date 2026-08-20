@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
@@ -15,10 +17,12 @@ router = APIRouter(prefix="/defect-dashboard", tags=["Quality Check"])
 @router.get("/summary", response_model=DefectDashboardSummaryResponse)
 def get_summary(
     production_line_id: int | None = Query(default=None, description="Verilirse sadece o hattın verisi, boşsa tüm hatlar"),
+    start_date: date | None = Query(default=None, description="Verilirse tüm grafikler bu tarihten (dahil) itibaren"),
+    end_date: date | None = Query(default=None, description="Verilirse tüm grafikler bu tarihe (dahil) kadar — boşsa start_date tek gün sayılır"),
     db: Session = Depends(get_db),
 ):
     use_case = get_defect_dashboard_summary_use_case(db)
-    r = use_case.execute(production_line_id)
+    r = use_case.execute(production_line_id, start_date, end_date)
 
     to_stat = lambda items: [PeriodStatResponse(period=i.period, inspected=i.inspected, defective=i.defective) for i in items]
     to_slices = lambda items: [CategorySliceResponse(category_name=i.category_name, count=i.count) for i in items]
@@ -34,4 +38,5 @@ def get_summary(
         category_breakdown_daily=to_slices(r.category_breakdown_daily),
         category_breakdown_weekly=to_slices(r.category_breakdown_weekly),
         category_breakdown_monthly=to_slices(r.category_breakdown_monthly),
+        category_breakdown_range=to_slices(r.category_breakdown_range),
     )

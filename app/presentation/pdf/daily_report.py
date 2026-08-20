@@ -52,7 +52,29 @@ CRITICAL = colors.HexColor("#D03B3B")
 ROW_ALT = colors.HexColor("#F5F6F8")
 
 
-def generate_daily_report_pdf(report_date: str, items: list[InspectionListItem], line_label: str | None = None) -> bytes:
+def _fmt_tr(iso_date: str) -> str:
+    """'YYYY-MM-DD' -> 'DD.MM.YYYY'."""
+    y, m, d = iso_date.split("-")
+    return f"{d}.{m}.{y}"
+
+
+def generate_daily_report_pdf(
+    start_date: str,
+    items: list[InspectionListItem],
+    line_label: str | None = None,
+    end_date: str | None = None,
+) -> bytes:
+    """
+    start_date/end_date: 'YYYY-MM-DD'. end_date verilmemişse (ya da start_date'e
+    eşitse) tek günlük rapor; farklıysa çok günlük bir aralık raporu üretilir —
+    bu durumda kayıt tablosunda saat yerine tarih+saat gösterilir.
+    """
+    end_date = end_date or start_date
+    is_range = end_date != start_date
+    period_label = f"{_fmt_tr(start_date)} – {_fmt_tr(end_date)}" if is_range else _fmt_tr(start_date)
+    report_title = "Kalite Kontrol Raporu" if is_range else "Günlük Kalite Kontrol Raporu"
+    pdf_title_date = period_label
+
     buffer = BytesIO()
     doc = SimpleDocTemplate(
         buffer,
@@ -61,7 +83,7 @@ def generate_daily_report_pdf(report_date: str, items: list[InspectionListItem],
         bottomMargin=16 * mm,
         leftMargin=16 * mm,
         rightMargin=16 * mm,
-        title=f"Günlük Kalite Kontrol Raporu - {report_date}",
+        title=f"{report_title} - {pdf_title_date}",
     )
 
     styles = getSampleStyleSheet()
@@ -94,7 +116,7 @@ def generate_daily_report_pdf(report_date: str, items: list[InspectionListItem],
     else:
         logo = Spacer(32 * mm, 1)
 
-    title_line = f"Günlük Kalite Kontrol Raporu<br/>{report_date}"
+    title_line = f"{report_title}<br/>{period_label}"
     if line_label:
         title_line += f'<br/><font size="10" color="#5B6B78">{line_label}</font>'
     else:
@@ -139,7 +161,8 @@ def generate_daily_report_pdf(report_date: str, items: list[InspectionListItem],
 
     # ---- Kayıt tablosu ----
     if not items:
-        elements.append(Paragraph("Bu tarihte hiç kayıt bulunmuyor.", sub_style))
+        empty_msg = "Bu tarih aralığında hiç kayıt bulunmuyor." if is_range else "Bu tarihte hiç kayıt bulunmuyor."
+        elements.append(Paragraph(empty_msg, sub_style))
     else:
         cell_style = ParagraphStyle("Cell", parent=styles["Normal"], fontName=FONT_REGULAR, fontSize=8.5, textColor=INK, leading=11)
         header_style = ParagraphStyle("CellHeader", parent=styles["Normal"], fontName=FONT_BOLD, fontSize=8, textColor=colors.white)
@@ -150,8 +173,11 @@ def generate_daily_report_pdf(report_date: str, items: list[InspectionListItem],
             style = ParagraphStyle("ResultCell", parent=cell_style, textColor=color, fontName=FONT_BOLD)
             return Paragraph(label, style)
 
+        time_header = "Tarih / Saat" if is_range else "Saat"
+        time_fmt = "%d.%m.%Y %H:%M" if is_range else "%H:%M"
+
         rows = [[
-            Paragraph("Saat", header_style),
+            Paragraph(time_header, header_style),
             Paragraph("TV Seri No", header_style),
             Paragraph("Sonuç", header_style),
             Paragraph("Hata Türü", header_style),
@@ -159,14 +185,14 @@ def generate_daily_report_pdf(report_date: str, items: list[InspectionListItem],
         ]]
         for it in items:
             rows.append([
-                Paragraph(it.inspected_at.strftime("%H:%M"), cell_style),
+                Paragraph(it.inspected_at.strftime(time_fmt), cell_style),
                 Paragraph(it.tv_serial_number, cell_style),
                 result_cell(it.result),
                 Paragraph(it.defect_category_name or "—", cell_style),
                 Paragraph(it.defect_reason or "—", cell_style),
             ])
 
-        col_widths = [18 * mm, 32 * mm, 20 * mm, 45 * mm, 63 * mm]
+        col_widths = [30 * mm, 32 * mm, 20 * mm, 42 * mm, 54 * mm] if is_range else [18 * mm, 32 * mm, 20 * mm, 45 * mm, 63 * mm]
         table = Table(rows, colWidths=col_widths, repeatRows=1)
         style_cmds = [
             ("BACKGROUND", (0, 0), (-1, 0), NAVY),

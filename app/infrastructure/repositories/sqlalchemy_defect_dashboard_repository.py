@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 
@@ -16,10 +18,15 @@ class SqlAlchemyDefectDashboardRepository:
     def __init__(self, session: Session):
         self._session = session
 
-    def get_summary(self, production_line_id: int | None = None) -> DefectDashboardSummary:
-        total_inspected = self._base_query(production_line_id, func.count(InspectionModel.id)).scalar() or 0
+    def get_summary(
+        self,
+        production_line_id: int | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
+    ) -> DefectDashboardSummary:
+        total_inspected = self._base_query(production_line_id, start_date, end_date, func.count(InspectionModel.id)).scalar() or 0
         total_defective = (
-            self._base_query(production_line_id, func.count(InspectionModel.id))
+            self._base_query(production_line_id, start_date, end_date, func.count(InspectionModel.id))
             .filter(InspectionModel.result == "FAIL")
             .scalar()
             or 0
@@ -28,12 +35,15 @@ class SqlAlchemyDefectDashboardRepository:
 
         defective_case = case((InspectionModel.result == "FAIL", 1), else_=0)
 
-        daily = self._period_stats(func.to_char(InspectionModel.inspected_at, "YYYY-MM-DD"), defective_case, production_line_id)
-        weekly = self._period_stats(func.to_char(InspectionModel.inspected_at, "IYYY-\"W\"IW"), defective_case, production_line_id)
-        monthly = self._period_stats(func.to_char(InspectionModel.inspected_at, "YYYY-MM"), defective_case, production_line_id)
+        daily = self._period_stats(func.to_char(InspectionModel.inspected_at, "YYYY-MM-DD"), defective_case, production_line_id, start_date, end_date)
+        weekly = self._period_stats(func.to_char(InspectionModel.inspected_at, "IYYY-\"W\"IW"), defective_case, production_line_id, start_date, end_date)
+        monthly = self._period_stats(func.to_char(InspectionModel.inspected_at, "YYYY-MM"), defective_case, production_line_id, start_date, end_date)
 
+        # Onceliklendirme listesi de ayni tarih araligina duyarli sorguyu kullaniyor
+        # -- aralik secilmemisse tum-zamanlarin en sik gorulen hatalarini, secilmisse
+        # sadece o araliginkileri dondurur.
         reason_q = (
-            self._base_query(production_line_id, DefectCategoryModel.name, func.count(InspectionModel.id))
+            self._base_query(production_line_id, start_date, end_date, DefectCategoryModel.name, func.count(InspectionModel.id))
             .join(DefectCategoryModel, DefectCategoryModel.id == InspectionModel.defect_category_id)
             .filter(InspectionModel.result == "FAIL")
             .group_by(DefectCategoryModel.name)
@@ -41,6 +51,18 @@ class SqlAlchemyDefectDashboardRepository:
             .limit(8)
         )
         top_reasons = [ReasonFrequency(reason=r, count=c) for r, c in reason_q.all()]
+
+        category_breakdown_range: list[CategorySlice] = []
+        if start_date is not None:
+            range_rows = (
+                self._base_query(production_line_id, start_date, end_date, DefectCategoryModel.name, func.count(InspectionModel.id))
+                .join(DefectCategoryModel, DefectCategoryModel.id == InspectionModel.defect_category_id)
+                .filter(InspectionModel.result == "FAIL")
+                .group_by(DefectCategoryModel.name)
+                .order_by(func.count(InspectionModel.id).desc())
+                .all()
+            )
+            category_breakdown_range = [CategorySlice(category_name=r, count=c) for r, c in range_rows]
 
         return DefectDashboardSummary(
             total_inspected=total_inspected,
@@ -50,27 +72,45 @@ class SqlAlchemyDefectDashboardRepository:
             weekly=weekly,
             monthly=monthly,
             top_reasons=top_reasons,
+            # Bu ucu bilerek tarih araligindan bagimsiz birakildi -- "Bugun / Bu
+            # Hafta / Bu Ay" birer anlik durum (snapshot) gostergesi; ozel bir
+            # aralik secildiginde bunlarin yerini category_breakdown_range alir.
             category_breakdown_daily=self._category_breakdown("day", production_line_id),
             category_breakdown_weekly=self._category_breakdown("week", production_line_id),
             category_breakdown_monthly=self._category_breakdown("month", production_line_id),
+            category_breakdown_range=category_breakdown_range,
         )
 
-    def _base_query(self, production_line_id: int | None, *select_exprs):
+    def _base_query(self, production_line_id: int | None, start_date: date | None, end_date: date | None, *select_exprs):
         """
-        Hangi kolonlar sorgulanırsa sorgulansın, hat filtresi verildiğinde
-        tvs tablosuna JOIN atıp o hatta ait olmayan kayıtları eler.
+        Hangi kolonlar sorgulanırsa sorgulansın: hat filtresi verildiğinde tvs
+        tablosuna JOIN atıp o hatta ait olmayan kayıtları, tarih aralığı
+        verildiğinde de aralık dışındaki kayıtları eler. end_date verilmemişse
+        (start_date verilmiş olsa bile) tek gün olarak yorumlanır.
         """
         query = self._session.query(*select_exprs)
         if production_line_id is not None:
             query = query.join(TVModel, TVModel.id == InspectionModel.tv_id).filter(
                 TVModel.line_id == production_line_id
             )
+        if start_date is not None:
+            query = query.filter(InspectionModel.inspected_at >= start_date)
+            effective_end = end_date or start_date
+            query = query.filter(InspectionModel.inspected_at < effective_end + timedelta(days=1))
         return query
 
-    def _period_stats(self, period_expr, defective_case, production_line_id: int | None) -> list[PeriodStat]:
+    def _period_stats(
+        self,
+        period_expr,
+        defective_case,
+        production_line_id: int | None,
+        start_date: date | None = None,
+        end_date: date | None = None,
+    ) -> list[PeriodStat]:
         rows = (
             self._base_query(
-                production_line_id, period_expr.label("period"), func.count(InspectionModel.id), func.sum(defective_case)
+                production_line_id, start_date, end_date,
+                period_expr.label("period"), func.count(InspectionModel.id), func.sum(defective_case),
             )
             .group_by("period")
             .order_by("period")
@@ -82,7 +122,7 @@ class SqlAlchemyDefectDashboardRepository:
         """trunc_unit: 'day' | 'week' | 'month' — o anki pencere (bugün/bu hafta/bu ay) için hata türü dağılımı."""
         window_start = func.date_trunc(trunc_unit, func.now())
         rows = (
-            self._base_query(production_line_id, DefectCategoryModel.name, func.count(InspectionModel.id))
+            self._base_query(production_line_id, None, None, DefectCategoryModel.name, func.count(InspectionModel.id))
             .join(DefectCategoryModel, DefectCategoryModel.id == InspectionModel.defect_category_id)
             .filter(InspectionModel.result == "FAIL", InspectionModel.inspected_at >= window_start)
             .group_by(DefectCategoryModel.name)

@@ -100,6 +100,13 @@
   .pie-legend-name { color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pie-legend-count { color: var(--ink-2); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
+  .range-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+  .range-toolbar .range-label { font-family: var(--font-mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); margin-right: 2px; white-space: nowrap; }
+  .range-toolbar .range-sep { color: var(--ink-3); font-size: 13px; }
+  .apply-btn { font: inherit; font-size: 13px; font-weight: 600; color: #fff; background: var(--accent); border: none; border-radius: 8px; padding: 8px 14px; cursor: pointer; white-space: nowrap; }
+  .apply-btn:hover { opacity: .9; }
+  .clear-btn { font: inherit; font-size: 12.5px; font-weight: 600; color: var(--ink-2); background: none; border: none; cursor: pointer; text-decoration: underline; padding: 4px; white-space: nowrap; }
+
   .line-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-top: 4px; }
   .line-tab-btn {
     font: inherit; font-size: 13px; font-weight: 600; padding: 9px 16px; border-radius: 999px;
@@ -151,6 +158,15 @@
   </header>
 
   <div class="line-tabs" id="line-tabs"><div class="empty" style="padding:8px 0;">Hatlar yükleniyor…</div></div>
+
+  <div class="range-toolbar" id="range-toolbar">
+    <span class="range-label">📅 Tarih Aralığı</span>
+    <input type="date" class="date-picker" id="range-start" />
+    <span class="range-sep">–</span>
+    <input type="date" class="date-picker" id="range-end" title="Boş bırakırsan tek gün seçilmiş olur" />
+    <button type="button" class="apply-btn" id="range-apply">Uygula</button>
+    <button type="button" class="clear-btn" id="range-today">Bugüne dön</button>
+  </div>
 
   <div id="content"><div class="empty">Yükleniyor…</div></div>
 </div>
@@ -205,6 +221,48 @@ let dashboardData = null;
 let activePeriod = "daily";
 let activeLineId = null; // null = Tüm Hatlar
 
+function todayIso() { return new Date().toISOString().slice(0, 10); }
+function fmtTr(iso) { const [y, m, d] = iso.split("-"); return `${d}.${m}.${y}`; }
+function rangeLabel() {
+  if (activeStartDate === activeEndDate) {
+    return activeStartDate === todayIso() ? "Bugün" : fmtTr(activeStartDate);
+  }
+  return `${fmtTr(activeStartDate)} – ${fmtTr(activeEndDate)}`;
+}
+
+// Tüm grafikler ve listeler aynı tarih aralığını paylaşır — varsayılan "bugün"
+// (tek gün); harita/takvimden iki tarih seçilirse arası, tek tarih seçilirse
+// yine tek gün olarak yorumlanır.
+let activeStartDate = todayIso();
+let activeEndDate = todayIso();
+
+function initRangeToolbar() {
+  const startInput = document.getElementById("range-start");
+  const endInput = document.getElementById("range-end");
+  startInput.value = activeStartDate;
+  endInput.value = activeEndDate;
+
+  document.getElementById("range-apply").addEventListener("click", () => {
+    const s = startInput.value;
+    const e = endInput.value;
+    if (!s) { alert("En az bir tarih (Başlangıç) seçmelisin."); return; }
+    activeStartDate = s;
+    // Bitiş boşsa ya da başlangıçtan önceyse: tek gün seçilmiş sayılır.
+    activeEndDate = (e && e >= s) ? e : s;
+    endInput.value = activeEndDate;
+    loadDashboard();
+  });
+
+  document.getElementById("range-today").addEventListener("click", () => {
+    const t = todayIso();
+    activeStartDate = t;
+    activeEndDate = t;
+    startInput.value = t;
+    endInput.value = t;
+    loadDashboard();
+  });
+}
+
 async function loadLineTabs() {
   const wrap = document.getElementById("line-tabs");
   try {
@@ -229,17 +287,22 @@ async function loadLineTabs() {
   }
 }
 
-function withLineParam(url) {
-  if (activeLineId === null) return url;
+// Hat filtresi + tarih aralığını (start_date/end_date) TÜM istekler için tutarlı
+// şekilde ekler — grafikler, liste ve PDF indirme aynı parametreleri kullanır.
+function withFilters(url) {
+  const params = new URLSearchParams();
+  if (activeLineId !== null) params.set("production_line_id", activeLineId);
+  params.set("start_date", activeStartDate);
+  params.set("end_date", activeEndDate);
   const sep = url.includes("?") ? "&" : "?";
-  return `${url}${sep}production_line_id=${activeLineId}`;
+  return `${url}${sep}${params.toString()}`;
 }
 
 async function loadDashboard() {
   const content = document.getElementById("content");
   content.innerHTML = '<div class="empty">Yükleniyor…</div>';
   try {
-    const res = await fetch(withLineParam("/api/v1/defect-dashboard/summary"));
+    const res = await fetch(withFilters("/api/v1/defect-dashboard/summary"));
     if (!res.ok) throw new Error("HTTP " + res.status);
     dashboardData = await res.json();
     render();
@@ -253,7 +316,7 @@ function render() {
   const d = dashboardData;
 
   if (d.total_inspected === 0) {
-    content.innerHTML = `<section class="card"><div class="empty">Henüz hiç kontrol kaydı yok.<br><a href="/inspections/new?v=2">İlk TV kontrolünü buradan gir</a> — burası otomatik dolmaya başlayacak.</div></section>`;
+    content.innerHTML = `<section class="card"><div class="empty">Seçili tarih aralığında (${rangeLabel()}) hiç kontrol kaydı yok.<br><a href="/inspections/new?v=2">Yeni bir TV kontrolü gir</a> ya da yukarıdan farklı bir tarih aralığı seç.</div></section>`;
     return;
   }
 
@@ -266,7 +329,7 @@ function render() {
 
     <section class="card">
       <div class="card-head">
-        <div><h2>Hata Oranı Trendi</h2><div class="card-sub">Dönem seç: günlük / haftalık / aylık</div></div>
+        <div><h2>Hata Oranı Trendi</h2><div class="card-sub">Seçili aralık: ${rangeLabel()} — dönem seç: günlük / haftalık / aylık</div></div>
         <div class="legend"><span><i style="background:var(--accent)"></i>Kontrol edilen</span><span><i style="background:var(--accent-2)"></i>Hatalı</span></div>
       </div>
       <div class="tabs" style="margin-top:10px;">
@@ -278,38 +341,25 @@ function render() {
     </section>
 
     <section class="card">
-      <div class="card-head"><div><h2>Hata Türü Dağılımı</h2><div class="card-sub">Bugün / bu hafta / bu ay — hata türlerinin oranı</div></div></div>
-      <div class="pie-grid">
+      <div class="card-head"><div><h2>Hata Türü Dağılımı</h2><div class="card-sub">${rangeLabel()} — hata türlerinin oranı</div></div></div>
+      <div class="pie-grid" style="grid-template-columns: minmax(0,260px);">
         <div class="pie-card">
-          <div class="pie-card-title">Günlük</div>
-          <svg id="pie-daily" width="150" height="150" role="img" aria-label="Günlük hata türü dağılımı"></svg>
-          <div class="pie-legend" id="pie-daily-legend"></div>
-        </div>
-        <div class="pie-card">
-          <div class="pie-card-title">Haftalık</div>
-          <svg id="pie-weekly" width="150" height="150" role="img" aria-label="Haftalık hata türü dağılımı"></svg>
-          <div class="pie-legend" id="pie-weekly-legend"></div>
-        </div>
-        <div class="pie-card">
-          <div class="pie-card-title">Aylık</div>
-          <svg id="pie-monthly" width="150" height="150" role="img" aria-label="Aylık hata türü dağılımı"></svg>
-          <div class="pie-legend" id="pie-monthly-legend"></div>
+          <div class="pie-card-title">${rangeLabel()}</div>
+          <svg id="pie-range" width="150" height="150" role="img" aria-label="Seçili aralık hata türü dağılımı"></svg>
+          <div class="pie-legend" id="pie-range-legend"></div>
         </div>
       </div>
     </section>
 
     <section class="card">
-      <div class="card-head"><div><h2>En Sık Görülen Hata Türleri</h2><div class="card-sub">Tüm zamanlar, en sık ilk 8</div></div></div>
+      <div class="card-head"><div><h2>En Sık Görülen Hata Türleri</h2><div class="card-sub">${rangeLabel()}, en sık ilk 8</div></div></div>
       <div class="reason-list" id="reason-list"></div>
     </section>
 
     <section class="card">
       <div class="card-head">
-        <div><h2>Günlük Kayıt Listesi</h2><div class="card-sub">Seçilen güne ait tüm TV kontrolleri, tek tek</div></div>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <input type="date" class="date-picker" id="list-date" />
-          <a id="export-pdf-link" class="export-btn" href="#" target="_blank" rel="noopener">⬇ PDF</a>
-        </div>
+        <div><h2>Kayıt Listesi</h2><div class="card-sub">${rangeLabel()} — tüm TV kontrolleri, tek tek</div></div>
+        <a id="export-pdf-link" class="export-btn" href="#" target="_blank" rel="noopener">⬇ PDF</a>
       </div>
       <div class="table-wrap" id="daily-list-wrap"><div class="empty">Yükleniyor…</div></div>
     </section>
@@ -324,20 +374,12 @@ function render() {
     });
   });
 
-  const dateInput = document.getElementById("list-date");
-  const exportLink = document.getElementById("export-pdf-link");
-  const today = new Date().toISOString().slice(0, 10);
-  dateInput.value = today;
-  exportLink.href = withLineParam(`/api/v1/inspections/export?date=${today}`);
-  dateInput.addEventListener("change", () => {
-    loadDailyList(dateInput.value);
-    exportLink.href = withLineParam(`/api/v1/inspections/export?date=${dateInput.value}`);
-  });
+  document.getElementById("export-pdf-link").href = withFilters("/api/v1/inspections/export");
 
   drawTrend();
   renderReasons();
   renderPies();
-  loadDailyList(today);
+  loadDailyList();
 }
 
 // Validated 8-slot kategorik palet (dataviz referans paleti) — sırası CVD-güvenli, karıştırma.
@@ -440,33 +482,37 @@ function drawPie(svgId, legendId, rawSlices, emptyLabel) {
 }
 
 function renderPies() {
-  drawPie("pie-daily", "pie-daily-legend", dashboardData.category_breakdown_daily, "Bugün hata yok");
-  drawPie("pie-weekly", "pie-weekly-legend", dashboardData.category_breakdown_weekly, "Bu hafta hata yok");
-  drawPie("pie-monthly", "pie-monthly-legend", dashboardData.category_breakdown_monthly, "Bu ay hata yok");
+  drawPie("pie-range", "pie-range-legend", dashboardData.category_breakdown_range, "Bu aralıkta hata yok");
 }
 
-async function loadDailyList(date) {
+async function loadDailyList() {
   const wrap = document.getElementById("daily-list-wrap");
   wrap.innerHTML = '<div class="empty">Yükleniyor…</div>';
+  const isRange = activeStartDate !== activeEndDate;
   try {
-    const res = await fetch(withLineParam(`/api/v1/inspections?date=${date}`));
+    const res = await fetch(withFilters("/api/v1/inspections"));
     if (!res.ok) throw new Error("HTTP " + res.status);
     const rows = await res.json();
 
     if (!rows.length) {
-      wrap.innerHTML = '<div class="empty">Bu tarihte hiç kayıt yok.</div>';
+      wrap.innerHTML = '<div class="empty">Bu tarih aralığında hiç kayıt yok.</div>';
       return;
     }
+
+    const timeHeader = isRange ? "Tarih / Saat" : "Saat";
+    const fmtTime = (iso) => isRange
+      ? new Date(iso).toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" })
+      : new Date(iso).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
 
     wrap.innerHTML = `
       <table class="insp-table">
         <thead>
-          <tr><th>Saat</th><th>TV Seri No</th><th>Sonuç</th><th>Hata Türü</th><th>Ek Açıklama</th></tr>
+          <tr><th>${timeHeader}</th><th>TV Seri No</th><th>Sonuç</th><th>Hata Türü</th><th>Ek Açıklama</th></tr>
         </thead>
         <tbody>
           ${rows.map(r => `
             <tr>
-              <td class="time">${new Date(r.inspected_at).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</td>
+              <td class="time">${fmtTime(r.inspected_at)}</td>
               <td class="serial">${r.tv_serial_number}</td>
               <td>${r.result === "PASS" ? '<span class="badge pass">OK</span>' : '<span class="badge fail">HATALI</span>'}</td>
               <td>${r.defect_category_name || "—"}</td>
@@ -563,6 +609,7 @@ function renderReasons() {
   requestAnimationFrame(() => fills.forEach(f => { f.el.style.transform = `scaleX(${f.pct / 100})`; }));
 }
 
+initRangeToolbar();
 loadLineTabs();
 loadDashboard();
 </script>

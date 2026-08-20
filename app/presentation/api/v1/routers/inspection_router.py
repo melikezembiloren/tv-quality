@@ -52,12 +52,13 @@ def record_inspection(payload: InspectionCreateRequest, db: Session = Depends(ge
 
 @router.get("", response_model=list[InspectionListItemResponse])
 def list_inspections(
-    date: str | None = Query(default=None, description="YYYY-MM-DD, boşsa bugün"),
+    start_date: str | None = Query(default=None, description="YYYY-MM-DD, boşsa bugün"),
+    end_date: str | None = Query(default=None, description="YYYY-MM-DD — verilirse start_date..end_date arası (dahil), boşsa tek gün"),
     production_line_id: int | None = Query(default=None, description="Verilirse sadece o hattın kayıtları"),
     db: Session = Depends(get_db),
 ):
     use_case = get_list_inspections_use_case(db)
-    results = use_case.execute(date, production_line_id)
+    results = use_case.execute(start_date, end_date, production_line_id)
     return [
         InspectionListItemResponse(
             id=r.id,
@@ -73,15 +74,17 @@ def list_inspections(
 
 @router.get("/export")
 def export_daily_report(
-    date: str | None = Query(default=None, description="YYYY-MM-DD, boşsa bugün"),
+    start_date: str | None = Query(default=None, description="YYYY-MM-DD, boşsa bugün"),
+    end_date: str | None = Query(default=None, description="YYYY-MM-DD — verilirse start_date..end_date arası (dahil), boşsa tek gün"),
     production_line_id: int | None = Query(default=None, description="Verilirse sadece o hattın raporu"),
     db: Session = Depends(get_db),
 ):
-    """Günlük kayıt listesini, Tectone logolu resmi bir PDF rapor olarak indirir."""
-    report_date = date or date_cls.today().isoformat()
+    """Kayıt listesini (tek gün ya da tarih aralığı), Tectone logolu resmi bir PDF rapor olarak indirir."""
+    report_date = start_date or date_cls.today().isoformat()
+    report_end_date = end_date or report_date
 
     use_case = get_list_inspections_use_case(db)
-    results = use_case.execute(report_date, production_line_id)
+    results = use_case.execute(report_date, end_date, production_line_id)
 
     line_label = None
     if production_line_id is not None:
@@ -89,10 +92,11 @@ def export_daily_report(
         match = next((l for l in lines if l.id == production_line_id), None)
         line_label = f"{match.code} — {match.name}" if match else None
 
-    pdf_bytes = generate_daily_report_pdf(report_date, results, line_label=line_label)
+    pdf_bytes = generate_daily_report_pdf(report_date, results, line_label=line_label, end_date=end_date)
 
+    filename_suffix = report_date if report_end_date == report_date else f"{report_date}_{report_end_date}"
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="gunluk-kalite-raporu-{report_date}.pdf"'},
+        headers={"Content-Disposition": f'attachment; filename="kalite-raporu-{filename_suffix}.pdf"'},
     )

@@ -33,3 +33,5 @@ class DefectDashboardSummary:
     category_breakdown_daily: list[CategorySlice] = field(default_factory=list)
     category_breakdown_weekly: list[CategorySlice] = field(default_factory=list)
     category_breakdown_monthly: list[CategorySlice] = field(default_factory=list)
+    # kullanıcı özel bir tarih aralığı seçtiyse (start_date verildiyse) doldurulur
+    category_breakdown_range: list[CategorySlice] = field(default_factory=list)

@@ -28,3 +28,4 @@ class DefectDashboardSummaryResponse(BaseModel):
     category_breakdown_daily: list[CategorySliceResponse]
     category_breakdown_weekly: list[CategorySliceResponse]
     category_breakdown_monthly: list[CategorySliceResponse]
+    category_breakdown_range: list[CategorySliceResponse]

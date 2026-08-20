@@ -32,8 +32,15 @@ class SqlAlchemyInspectionRepository:
             inspected_at=row.inspected_at,
         )
 
-    def list_by_date(self, date: str | None, production_line_id: int | None = None) -> list[InspectionListItem]:
-        target_date = date or func.current_date()
+    def list_by_date(
+        self,
+        date: str | None,
+        end_date: str | None = None,
+        production_line_id: int | None = None,
+    ) -> list[InspectionListItem]:
+        start = date or func.current_date()
+        # end_date verilmemişse tek gün: aralığın bitişi de başlangıcıyla aynı.
+        end = end_date or date or func.current_date()
 
         query = (
             self._session.query(
@@ -46,7 +53,7 @@ class SqlAlchemyInspectionRepository:
             )
             .join(TVModel, TVModel.id == InspectionModel.tv_id)
             .outerjoin(DefectCategoryModel, DefectCategoryModel.id == InspectionModel.defect_category_id)
-            .filter(func.date(InspectionModel.inspected_at) == target_date)
+            .filter(func.date(InspectionModel.inspected_at).between(start, end))
         )
         if production_line_id is not None:
             query = query.filter(TVModel.line_id == production_line_id)
