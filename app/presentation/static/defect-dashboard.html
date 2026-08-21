@@ -36,6 +36,8 @@
     --shadow-well-inset: rgba(0,0,0,.18);
     --font-mono: "Plus Jakarta Sans", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
     --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+    --trend-good: #2563eb;
+    --trend-bad:  #e11d48;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -50,6 +52,8 @@
       --selection-ink: var(--bg);
       --shadow-1: 0 1px 2px rgba(0,0,0,.4);
       --shadow-2: 0 12px 32px -8px rgba(0,0,0,.6);
+      --trend-good: #5b9dff;
+      --trend-bad:  #ff5470;
     }
   }
   :root[data-theme="dark"] {
@@ -64,6 +68,8 @@
     --selection-ink: var(--bg);
     --shadow-1: 0 1px 2px rgba(0,0,0,.4);
     --shadow-2: 0 12px 32px -8px rgba(0,0,0,.6);
+    --trend-good: #5b9dff;
+    --trend-bad:  #ff5470;
   }
 
   * { box-sizing: border-box; }
@@ -286,9 +292,10 @@ window.addEventListener("mousemove", moveTip);
     root.setAttribute("data-theme", next);
     localStorage.setItem("qtv-theme", next);
     sync();
-    // donut dilimleri sabit hex renklerle çizildiği için (CSS değişkeni değil),
-    // tema değişince paleti yansıtmaları için yeniden çizdiriyoruz.
-    if (typeof dashboardData !== "undefined" && dashboardData) renderPies();
+    // Donut dilimleri ve trend grafiğinin gradyanları çizim anında okunan sabit
+    // hex renklerle oluşturuluyor (CSS değişkeni değil) — tema değişince ikisini
+    // de yeniden çizdirmezsek eski temanın renklerinde takılı kalırlar.
+    if (typeof dashboardData !== "undefined" && dashboardData) { renderPies(); drawTrend(); }
   });
   sync();
 })();
@@ -431,7 +438,7 @@ function render() {
     <section class="panel">
       <div class="panel-head">
         <div><h2>Hata Oranı Trendi</h2><div class="panel-sub">Seçili aralık: ${rangeLabel()}</div></div>
-        <div class="legend"><span><i style="background:var(--ink)"></i>Kontrol edilen</span><span><i style="background:var(--crit)"></i>Hatalı</span></div>
+        <div class="legend"><span><i style="background:var(--trend-good)"></i>Kontrol edilen</span><span><i style="background:var(--trend-bad)"></i>Hatalı</span></div>
       </div>
       <div class="tabs">
         <button class="tab-btn" data-period="daily">Günlük</button>
@@ -649,18 +656,18 @@ function drawTrend() {
   svg.setAttribute("height", h);
 
   const styles = getComputedStyle(document.documentElement);
-  const inkColor = styles.getPropertyValue("--ink").trim();
-  const critColor = styles.getPropertyValue("--crit").trim();
+  const goodColor = styles.getPropertyValue("--trend-good").trim();
+  const badColor = styles.getPropertyValue("--trend-bad").trim();
   const borderColor = styles.getPropertyValue("--border").trim();
 
   const defs = elx("defs", {});
   const gradA = elx("linearGradient", { id: "gradInspected", x1: "0", y1: "0", x2: "0", y2: "1" });
-  gradA.appendChild(elx("stop", { offset: "0%", "stop-color": inkColor, "stop-opacity": "1" }));
-  gradA.appendChild(elx("stop", { offset: "100%", "stop-color": inkColor, "stop-opacity": ".72" }));
+  gradA.appendChild(elx("stop", { offset: "0%", "stop-color": goodColor, "stop-opacity": "1" }));
+  gradA.appendChild(elx("stop", { offset: "100%", "stop-color": goodColor, "stop-opacity": ".72" }));
   defs.appendChild(gradA);
   const gradD = elx("linearGradient", { id: "gradDefective", x1: "0", y1: "0", x2: "0", y2: "1" });
-  gradD.appendChild(elx("stop", { offset: "0%", "stop-color": critColor, "stop-opacity": "1" }));
-  gradD.appendChild(elx("stop", { offset: "100%", "stop-color": critColor, "stop-opacity": ".65" }));
+  gradD.appendChild(elx("stop", { offset: "0%", "stop-color": badColor, "stop-opacity": "1" }));
+  gradD.appendChild(elx("stop", { offset: "100%", "stop-color": badColor, "stop-opacity": ".65" }));
   defs.appendChild(gradD);
   svg.appendChild(defs);
 
