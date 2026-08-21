@@ -16,7 +16,7 @@ class GetMonthlyReportUseCase:
     def __init__(self, repository: MonthlyReportRepository):
         self._repository = repository
 
-    def execute(self, month: str) -> MonthlyReportData:
+    def execute(self, month: str, production_line_id: int | None = None) -> MonthlyReportData:
         if not _MONTH_PATTERN.match(month):
             raise InvalidReportMonthError(f"month 'YYYY-MM' formatında olmalı, alınan: {month!r}")
-        return self._repository.get_report(month)
+        return self._repository.get_report(month, production_line_id)
