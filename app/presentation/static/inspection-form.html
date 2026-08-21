@@ -133,6 +133,30 @@
     border: 1px solid var(--ink); border-radius: 8px; padding: 0 16px; cursor: pointer; white-space: nowrap;
   }
 
+  /* ---- birden fazla hata satırı (audit-form'daki bulgu listesiyle aynı desen) ---- */
+  .defects-list { display: flex; flex-direction: column; gap: 10px; }
+  .defect-row { display: grid; grid-template-columns: 1fr 1fr 38px; gap: 8px; align-items: start; }
+  @media (max-width: 460px) { .defect-row { grid-template-columns: 1fr; } }
+  .defect-remove {
+    width: 38px; height: 38px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--ink-2); cursor: pointer; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: border-color .15s ease, color .15s ease, transform .1s ease;
+  }
+  .defect-remove svg { width: 15px; height: 15px; }
+  .defect-remove:hover { color: var(--crit); border-color: var(--crit); }
+  .defect-remove:active { transform: scale(.94); }
+
+  .add-defect-btn {
+    align-self: flex-start;
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-2);
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 14px; cursor: pointer; transition: border-color .15s ease, color .15s ease; width: auto;
+  }
+  .add-defect-btn:hover { border-color: var(--border-strong); color: var(--ink); }
+  .no-defects { font-size: 11.5px; color: var(--ink-3); }
+
   button.submit {
     font: inherit; font-size: 13px; font-weight: 700; color: var(--bg);
     background: var(--ink); border: 1px solid var(--ink); border-radius: 12px;
@@ -193,18 +217,16 @@
       <div id="fail-fields">
         <div class="field">
           <div class="field-head">
-            <label for="category">Hata Türü</label>
+            <label>Hatalar <span style="font-weight:400; text-transform:none; letter-spacing:0;">(birden fazla eklenebilir)</span></label>
             <button type="button" class="add-category-link" id="add-category-toggle">+ Yeni hata türü ekle</button>
           </div>
-          <select id="category"><option value="">Yükleniyor…</option></select>
           <div class="add-category-row" id="add-category-row">
             <input id="new-category-name" type="text" placeholder="Yeni hata türü adı" />
             <button type="button" id="add-category-btn">Ekle</button>
           </div>
-        </div>
-        <div class="field">
-          <label for="note">Ek Açıklama <span style="font-weight:400; text-transform:none; letter-spacing:0;">(opsiyonel)</span></label>
-          <textarea id="note" placeholder="İstersen ek detay yaz"></textarea>
+          <div class="defects-list" id="defects-list"></div>
+          <div id="no-defects" class="no-defects">Henüz hata eklenmedi.</div>
+          <button type="button" class="add-defect-btn" id="add-defect-btn">+ Hata Ekle</button>
         </div>
       </div>
     </section>
@@ -214,6 +236,16 @@
 
   <a class="back" href="/defect-dashboard">&rarr; Hata Analizi Dashboard'unu gör</a>
 </div>
+
+<template id="defect-template">
+  <div class="defect-row" data-defect-row>
+    <select data-defect-category required></select>
+    <input type="text" placeholder="Ek açıklama (opsiyonel)" data-defect-note />
+    <button type="button" class="defect-remove" title="Bu hatayı kaldır" data-remove>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+</template>
 
 <script>
 // ---- tema (gece/gündüz) değiştirici — tercih tüm QualiTV sayfalarında ortak saklanıyor ----
@@ -246,10 +278,8 @@
 })();
 
 const lineSelect = document.getElementById("line");
-const categorySelect = document.getElementById("category");
 const serialInput = document.getElementById("serial");
 const failFields = document.getElementById("fail-fields");
-const noteInput = document.getElementById("note");
 const banner = document.getElementById("banner");
 const submitBtn = document.getElementById("submit-btn");
 const resultBtns = document.querySelectorAll(".result-btn");
@@ -257,7 +287,12 @@ const addCategoryToggle = document.getElementById("add-category-toggle");
 const addCategoryRow = document.getElementById("add-category-row");
 const newCategoryName = document.getElementById("new-category-name");
 const addCategoryBtn = document.getElementById("add-category-btn");
+const defectsList = document.getElementById("defects-list");
+const noDefects = document.getElementById("no-defects");
+const addDefectBtn = document.getElementById("add-defect-btn");
+const defectTemplate = document.getElementById("defect-template");
 let selectedResult = null;
+let allCategories = []; // { id, name } — tüm satırların dropdown'ları buradan besleniyor
 
 async function loadLines() {
   try {
@@ -271,18 +306,46 @@ async function loadLines() {
   }
 }
 
-async function loadCategories(selectId = null) {
+function categoryOptionsHtml() {
+  return allCategories.length
+    ? allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join("")
+    : `<option value="">Henüz hata türü yok — ekleyin</option>`;
+}
+
+async function loadCategories(preselectId = null) {
   try {
     const res = await fetch("/api/v1/defect-categories");
-    const data = await res.json();
-    categorySelect.innerHTML = data.length
-      ? data.map(c => `<option value="${c.id}">${c.name}</option>`).join("")
-      : `<option value="">Henüz hata türü yok — ekleyin</option>`;
-    if (selectId) categorySelect.value = String(selectId);
+    allCategories = await res.json();
+    // mevcut tüm satırların dropdown'larını da güncel listeyle tazele
+    defectsList.querySelectorAll("[data-defect-category]").forEach(sel => {
+      const current = sel.value;
+      sel.innerHTML = categoryOptionsHtml();
+      if (current) sel.value = current;
+    });
+    if (preselectId) addDefectRow(preselectId);
   } catch (err) {
     showBanner("error", `Hata türü listesi yüklenemedi: ${err.message}`);
   }
 }
+
+function toggleNoDefects() {
+  noDefects.style.display = defectsList.children.length ? "none" : "block";
+}
+
+function addDefectRow(preselectId = null) {
+  const node = defectTemplate.content.cloneNode(true);
+  const select = node.querySelector("[data-defect-category]");
+  select.innerHTML = categoryOptionsHtml();
+  if (preselectId) select.value = String(preselectId);
+  node.querySelector("[data-remove]").addEventListener("click", (e) => {
+    e.target.closest("[data-defect-row]").remove();
+    toggleNoDefects();
+  });
+  defectsList.appendChild(node);
+  toggleNoDefects();
+}
+
+addDefectBtn.addEventListener("click", () => addDefectRow());
 
 resultBtns.forEach(btn => {
   btn.addEventListener("click", () => {
@@ -291,12 +354,11 @@ resultBtns.forEach(btn => {
     selectedResult = btn.dataset.result;
     if (selectedResult === "FAIL") {
       failFields.classList.add("show");
-      categorySelect.required = true;
+      if (!defectsList.children.length) addDefectRow(); // ilk seferde tek satırla başla
     } else {
       failFields.classList.remove("show");
-      categorySelect.required = false;
-      categorySelect.value = "";
-      noteInput.value = "";
+      defectsList.innerHTML = "";
+      toggleNoDefects();
       addCategoryRow.classList.remove("show");
     }
   });
@@ -319,7 +381,7 @@ addCategoryBtn.addEventListener("click", async () => {
     });
     const body = await res.json();
     if (!res.ok) throw new Error(body.detail || "Eklenemedi");
-    await loadCategories(body.id);
+    await loadCategories(body.id); // yeni kategoriyle önceden seçili yeni bir satır ekler
     newCategoryName.value = "";
     addCategoryRow.classList.remove("show");
   } catch (err) {
@@ -340,6 +402,8 @@ function resetForm() {
   selectedResult = null;
   failFields.classList.remove("show");
   addCategoryRow.classList.remove("show");
+  defectsList.innerHTML = "";
+  toggleNoDefects();
   serialInput.focus();
 }
 
@@ -351,32 +415,41 @@ document.getElementById("insp-form").addEventListener("submit", async (e) => {
     showBanner("error", "Önce OK ya da Hatalı seç.");
     return;
   }
-  if (selectedResult === "FAIL" && !categorySelect.value) {
-    showBanner("error", "Hatalı için bir hata türü seç.");
-    return;
+
+  // Hatalı için: en az bir satırda hata türü seçili olmalı.
+  let defects = [];
+  if (selectedResult === "FAIL") {
+    const rows = [...defectsList.querySelectorAll("[data-defect-row]")];
+    defects = rows.map(row => ({
+      defect_category_id: row.querySelector("[data-defect-category]").value,
+      defect_reason: row.querySelector("[data-defect-note]").value.trim() || null,
+    })).filter(d => d.defect_category_id);
+    if (!defects.length) {
+      showBanner("error", "Hatalı için en az bir hata türü seç.");
+      return;
+    }
   }
 
-  const payload = {
-    serial_number: serialInput.value.trim(),
-    production_line_id: Number(lineSelect.value),
-    result: selectedResult,
-    defect_category_id: selectedResult === "FAIL" ? Number(categorySelect.value) : null,
-    defect_reason: selectedResult === "FAIL" ? (noteInput.value.trim() || null) : null,
-  };
+  const serial = serialInput.value.trim();
+  const lineId = Number(lineSelect.value);
 
   submitBtn.disabled = true;
   submitBtn.textContent = "Kaydediliyor…";
 
   try {
-    const res = await fetch("/api/v1/inspections", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const body = await res.json();
-    if (!res.ok) throw new Error(body.detail || "Kayıt başarısız");
-
-    showBanner("success", `Kaydedildi — TV #${body.tv_id}, sonuç: <b>${body.result}</b> (TV durumu: ${body.tv_status})`);
+    if (selectedResult === "PASS") {
+      const body = await postInspection(serial, lineId, "PASS", null, null);
+      showBanner("success", `Kaydedildi — TV #${body.tv_id}, sonuç: <b>OK</b> (TV durumu: ${body.tv_status})`);
+    } else {
+      // TV ilk kayıtta otomatik oluşturuluyor -- yarış durumuna girmemek için
+      // satırları paralel değil, sırayla (birbiri ardına) gönderiyoruz.
+      let lastBody = null;
+      for (const d of defects) {
+        lastBody = await postInspection(serial, lineId, "FAIL", Number(d.defect_category_id), d.defect_reason);
+      }
+      const plural = defects.length > 1 ? `${defects.length} hata` : "1 hata";
+      showBanner("success", `Kaydedildi — TV #${lastBody.tv_id}, ${plural} eklendi (TV durumu: ${lastBody.tv_status})`);
+    }
     resetForm();
   } catch (err) {
     showBanner("error", `Kaydedilemedi: ${err.message}`);
@@ -385,6 +458,23 @@ document.getElementById("insp-form").addEventListener("submit", async (e) => {
     submitBtn.textContent = "Kaydet";
   }
 });
+
+async function postInspection(serial, lineId, result, categoryId, reason) {
+  const res = await fetch("/api/v1/inspections", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      serial_number: serial,
+      production_line_id: lineId,
+      result,
+      defect_category_id: categoryId,
+      defect_reason: reason,
+    }),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.detail || "Kayıt başarısız");
+  return body;
+}
 
 loadLines();
 loadCategories();
