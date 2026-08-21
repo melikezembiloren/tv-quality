@@ -214,7 +214,8 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19 19l-4.3-4.3"/></svg>
         TV Sorgula
       </a>
-      <a href="/api/v1/reports/monthly-summary-by-line" class="btn-ghost" target="_blank" rel="noopener">
+      <input type="month" class="date-picker" id="report-month-picker" title="Rapor ayı" />
+      <a href="/api/v1/reports/monthly-summary-by-line" class="btn-ghost" target="_blank" rel="noopener" id="monthly-report-link">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h7l4 4V20a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/><path d="M13.5 3.5V8h4"/><path d="M9 12.5h6M9 15.5h6M9 18.5h4"/></svg>
         Aylık Özet — Hat Bazlı (PDF)
       </a>
@@ -307,6 +308,22 @@ function rangeLabel() {
 // yine tek gün olarak yorumlanır.
 let activeStartDate = todayIso();
 let activeEndDate = todayIso();
+
+// Aylık özet PDF'i için ay seçici — varsayılan bu ay, değiştirilince link güncellenir.
+function initReportMonthPicker() {
+  const monthInput = document.getElementById("report-month-picker");
+  const link = document.getElementById("monthly-report-link");
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  monthInput.value = currentMonth;
+
+  function updateLink() {
+    const month = monthInput.value || currentMonth;
+    link.href = `/api/v1/reports/monthly-summary-by-line?month=${month}`;
+  }
+  updateLink();
+  monthInput.addEventListener("change", updateLink);
+}
 
 function initRangeToolbar() {
   const startInput = document.getElementById("range-start");
@@ -708,6 +725,7 @@ function renderReasons() {
   requestAnimationFrame(() => fills.forEach(f => { f.el.style.transform = `scaleX(${f.pct / 100})`; }));
 }
 
+initReportMonthPicker();
 initRangeToolbar();
 loadLineTabs();
 loadDashboard();
