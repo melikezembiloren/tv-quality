@@ -4,112 +4,156 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Kalite Kontrol — QualiTV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
   :root {
     color-scheme: light;
-    --bg:            #f5f6f8;
-    --surface:       #ffffff;
-    --ink:           #10161c;
-    --ink-2:         #55606b;
-    --ink-3:         #8b96a1;
-    --border:        #dde2e6;
-    --accent:        #2a78d6;
-    --accent-soft:   #dce9fa;
-    --good:          #0ca30c;
-    --good-soft:     #d9f3d9;
-    --critical:      #d03b3b;
-    --critical-soft: #fbdddd;
+    --bg:            #e7e9eb;
+    --panel:         #f7f8f9;
+    --panel-2:       #eef0f1;
+    --well:          #e1e4e6;
+    --ink:           #14181b;
+    --ink-2:         #4b545c;
+    --ink-3:         #7c858c;
+    --border:        #d1d6d9;
+    --border-strong: #b3bac0;
+    --good:        #1c8a4d;
+    --good-ink:    #157a42;
+    --good-soft:   #dbefe1;
+    --warn:        #a8730a;
+    --warn-ink:    #7a4c06;
+    --warn-soft:   #f5e8cc;
+    --warn-strong: #b0430f;
+    --crit:        #c1272d;
+    --crit-ink:    #c1272d;
+    --crit-soft:   #f7dbdc;
+    --focus:     #2f6fed;
+    --selection-ink: #ffffff;
+    --shadow-1: 0 1px 2px rgba(20,24,27,.06);
+    --shadow-2: 0 8px 24px -8px rgba(20,24,27,.22);
+    --shadow-well-inset: rgba(0,0,0,.18);
     --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", "Consolas", monospace;
-    --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+    --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       color-scheme: dark;
-      --bg: #0d1013; --surface: #15191d; --ink: #f2f4f6; --ink-2: #aab2ba; --ink-3: #757e87;
-      --border: rgba(255,255,255,0.10); --accent: #3987e5; --accent-soft: #17293f;
-      --good: #0ca30c; --good-soft: #123a17; --critical: #e66767; --critical-soft: #3a1517;
+      --bg: #0b0d0f; --panel: #16181b; --panel-2: #1c1f22; --well: #101214;
+      --ink: #f1f2f3; --ink-2: #a7adb2; --ink-3: #767d82;
+      --border: rgba(255,255,255,.08); --border-strong: rgba(255,255,255,.18);
+      --good: #2fd274; --good-ink: var(--good); --good-soft: rgba(47,210,116,.16);
+      --warn: #ffb648;  --warn-ink: var(--warn); --warn-soft: rgba(255,182,72,.16); --warn-strong: #ff8a3d;
+      --crit: #ff5c5c;  --crit-ink: var(--crit); --crit-soft: rgba(255,92,92,.18);
+      --focus: #6ea8ff;
+      --selection-ink: var(--bg);
+      --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+      --shadow-2: 0 12px 32px -8px rgba(0,0,0,.6);
     }
   }
   :root[data-theme="dark"] {
     color-scheme: dark;
-    --bg: #0d1013; --surface: #15191d; --ink: #f2f4f6; --ink-2: #aab2ba; --ink-3: #757e87;
-    --border: rgba(255,255,255,0.10); --accent: #3987e5; --accent-soft: #17293f;
-    --good: #0ca30c; --good-soft: #123a17; --critical: #e66767; --critical-soft: #3a1517;
+    --bg: #0b0d0f; --panel: #16181b; --panel-2: #1c1f22; --well: #101214;
+    --ink: #f1f2f3; --ink-2: #a7adb2; --ink-3: #767d82;
+    --border: rgba(255,255,255,.08); --border-strong: rgba(255,255,255,.18);
+    --good: #2fd274; --good-ink: var(--good); --good-soft: rgba(47,210,116,.16);
+    --warn: #ffb648;  --warn-ink: var(--warn); --warn-soft: rgba(255,182,72,.16); --warn-strong: #ff8a3d;
+    --crit: #ff5c5c;  --crit-ink: var(--crit); --crit-soft: rgba(255,92,92,.18);
+    --focus: #6ea8ff;
+    --selection-ink: var(--bg);
+    --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-2: 0 12px 32px -8px rgba(0,0,0,.6);
   }
+
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
-  .page { max-width: 560px; margin: 0 auto; padding: 32px 20px 80px; display: flex; flex-direction: column; gap: 20px; }
-  .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0 0 6px; }
-  h1 { font-size: clamp(22px, 4vw, 26px); margin: 0 0 4px; letter-spacing: -0.01em; }
-  .sub { color: var(--ink-2); font-size: 13px; }
-  a.back { color: var(--ink-2); font-size: 12.5px; text-decoration: none; }
-  a.back:hover { color: var(--accent); }
+  html { scrollbar-color: var(--border-strong) transparent; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  ::selection { background: var(--focus); color: var(--selection-ink); }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .page { max-width: 560px; margin: 0 auto; padding: 32px 20px 88px; display: flex; flex-direction: column; gap: 20px; }
+  .masthead { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+  h1 { font-size: clamp(19.5px, 3.52vw, 26.5px); margin: 0 0 4px; letter-spacing: -0.01em; font-weight: 400; }
+  .lineage { color: var(--ink-2); font-size: 11.5px; margin: 0; }
+  a.back { color: var(--ink-3); font-size: 11px; text-decoration: none; }
+  a.back:hover { color: var(--ink); }
   .icon-btn {
     display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px;
-    border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--ink-2);
+    border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--ink-2);
     cursor: pointer; transition: border-color .15s ease, color .15s ease, transform .1s ease; flex-shrink: 0;
   }
-  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .icon-btn:hover { border-color: var(--border-strong); color: var(--ink); }
   .icon-btn:active { transform: scale(.94); }
   .icon-btn svg { width: 18px; height: 18px; }
 
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  section.panel {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; box-shadow: var(--shadow-1); display: flex; flex-direction: column; gap: 16px;
+  }
   .field { display: flex; flex-direction: column; gap: 6px; }
-  .field label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+  .field label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
   .field-head { display: flex; justify-content: space-between; align-items: baseline; }
 
+  /* Saha girişi: dokunmatik hedefler büyük, 16px giriş boyutu mobil tarayıcıda
+     odaklanınca otomatik yakınlaştırmayı önler (iOS Safari eşiği) — bilinçli sapma. */
   input, select, textarea {
-    font: inherit; font-size: 16px; color: var(--ink); background: var(--bg);
-    border: 1px solid var(--border); border-radius: 10px; padding: 14px 14px; width: 100%;
+    font: inherit; font-size: 16px; color: var(--ink); background: var(--well);
+    border: 1px solid var(--border); border-radius: 8px; padding: 14px 14px; width: 100%;
+    box-shadow: inset 0 1px 3px var(--shadow-well-inset);
   }
-  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--focus); outline-offset: 1px; border-color: var(--focus); }
   textarea { resize: vertical; min-height: 60px; }
 
   .result-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .result-btn {
-    font: inherit; font-size: 16px; font-weight: 700; padding: 20px 12px; border-radius: 12px;
-    border: 2px solid var(--border); background: var(--surface); color: var(--ink-2); cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    font: inherit; font-size: 13px; font-weight: 700; padding: 20px 12px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--well); color: var(--ink-2); cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    transition: border-color .15s ease, background-color .15s ease, color .15s ease;
   }
-  .result-btn .icon { font-size: 26px; }
-  .result-btn.pass.active { border-color: var(--good); background: var(--good-soft); color: var(--good); }
-  .result-btn.fail.active { border-color: var(--critical); background: var(--critical-soft); color: var(--critical); }
+  .result-btn svg { width: 26px; height: 26px; }
+  .result-btn.pass.active { border-color: var(--good); background: var(--good-soft); color: var(--good-ink); }
+  .result-btn.fail.active { border-color: var(--crit); background: var(--crit-soft); color: var(--crit-ink); }
 
   #fail-fields { display: none; flex-direction: column; gap: 16px; }
   #fail-fields.show { display: flex; }
 
   .add-category-link {
-    font: inherit; font-size: 12.5px; font-weight: 600; color: var(--accent);
-    background: none; border: none; cursor: pointer; padding: 0;
+    font: inherit; font-size: 11px; font-weight: 700; color: var(--ink-2);
+    background: none; border: none; cursor: pointer; padding: 0; text-decoration: underline;
   }
+  .add-category-link:hover { color: var(--ink); }
   .add-category-row { display: none; gap: 8px; }
   .add-category-row.show { display: flex; }
   .add-category-row input { flex: 1; }
   .add-category-row button {
-    font: inherit; font-size: 13px; font-weight: 700; color: #fff; background: var(--accent);
-    border: none; border-radius: 10px; padding: 0 16px; cursor: pointer; white-space: nowrap;
+    font: inherit; font-size: 11.5px; font-weight: 700; color: var(--bg); background: var(--ink);
+    border: 1px solid var(--ink); border-radius: 8px; padding: 0 16px; cursor: pointer; white-space: nowrap;
   }
 
   button.submit {
-    font: inherit; font-size: 16px; font-weight: 700; color: #fff;
-    background: var(--accent); border: none; border-radius: 12px;
-    padding: 16px 20px; cursor: pointer;
+    font: inherit; font-size: 13px; font-weight: 700; color: var(--bg);
+    background: var(--ink); border: 1px solid var(--ink); border-radius: 12px;
+    padding: 16px 20px; cursor: pointer; transition: opacity .15s ease, transform .1s ease;
   }
+  button.submit:hover { opacity: .88; }
+  button.submit:active { transform: scale(.99); }
   button.submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  .banner { border-radius: 10px; padding: 14px 18px; font-size: 13.5px; display: none; }
+  .banner { border-radius: 12px; padding: 14px 18px; font-size: 11.5px; display: none; line-height: 1.5; }
   .banner.show { display: block; }
-  .banner.success { background: color-mix(in srgb, var(--good) 14%, var(--surface)); border: 1px solid var(--good); color: var(--ink); }
-  .banner.error { background: color-mix(in srgb, var(--critical) 14%, var(--surface)); border: 1px solid var(--critical); color: var(--ink); }
+  .banner.success { background: var(--good-soft); border: 1px solid var(--good); color: var(--ink); }
+  .banner.error { background: var(--crit-soft); border: 1px solid var(--crit); color: var(--ink); }
 </style>
 </head>
 <body>
 <div class="page">
-  <header style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+  <header class="masthead">
     <div>
-      <p class="eyebrow">Kalite Kontrol</p>
       <h1>TV Kontrolü</h1>
-      <div class="sub">Üretim hattından bağımsız — her TV için OK / Hatalı işaretle</div>
+      <p class="lineage">Üretim hattından bağımsız — her TV için OK / Hatalı işaretle</p>
     </div>
     <button class="icon-btn" id="theme-toggle" type="button" aria-label="Tema değiştir" aria-pressed="false">
       <svg id="theme-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M4.5 12H2.1M21.9 12h-2.4M6 6l1.7 1.7M16.3 16.3 18 18M18 6l-1.7 1.7M7.7 16.3 6 18"/></svg>
@@ -120,7 +164,7 @@
   <div class="banner" id="banner"></div>
 
   <form id="insp-form">
-    <div class="card">
+    <section class="panel">
       <div class="field">
         <label for="serial">Seri Numarası</label>
         <input id="serial" type="text" placeholder="örn. TZ55-00042" required autofocus />
@@ -129,14 +173,20 @@
         <label for="line">İnç / Hat</label>
         <select id="line" required><option value="">Yükleniyor…</option></select>
       </div>
-    </div>
+    </section>
 
-    <div class="card">
+    <section class="panel">
       <div class="field">
         <label>Sonuç</label>
         <div class="result-toggle">
-          <button type="button" class="result-btn pass" data-result="PASS"><span class="icon">✓</span>OK</button>
-          <button type="button" class="result-btn fail" data-result="FAIL"><span class="icon">✕</span>Hatalı</button>
+          <button type="button" class="result-btn pass" data-result="PASS">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>
+            OK
+          </button>
+          <button type="button" class="result-btn fail" data-result="FAIL">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            Hatalı
+          </button>
         </div>
       </div>
 
@@ -153,11 +203,11 @@
           </div>
         </div>
         <div class="field">
-          <label for="note">Ek Açıklama <span style="font-weight:400;">(opsiyonel)</span></label>
+          <label for="note">Ek Açıklama <span style="font-weight:400; text-transform:none; letter-spacing:0;">(opsiyonel)</span></label>
           <textarea id="note" placeholder="İstersen ek detay yaz"></textarea>
         </div>
       </div>
-    </div>
+    </section>
 
     <button type="submit" class="submit" id="submit-btn">Kaydet</button>
   </form>

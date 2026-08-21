@@ -4,122 +4,171 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Yeni Denetim — QualiTV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
   :root {
     color-scheme: light;
-    --bg:            #f5f6f8;
-    --surface:       #ffffff;
-    --ink:           #10161c;
-    --ink-2:         #55606b;
-    --ink-3:         #8b96a1;
-    --border:        #dde2e6;
-    --accent:        #4a3aa7;
-    --accent-soft:   #e6e2f7;
-    --good:          #0ca30c;
-    --critical:      #d03b3b;
+    --bg:            #e7e9eb;
+    --panel:         #f7f8f9;
+    --panel-2:       #eef0f1;
+    --well:          #e1e4e6;
+    --ink:           #14181b;
+    --ink-2:         #4b545c;
+    --ink-3:         #7c858c;
+    --border:        #d1d6d9;
+    --border-strong: #b3bac0;
+    --good:        #1c8a4d;
+    --good-ink:    #157a42;
+    --good-soft:   #dbefe1;
+    --warn:        #a8730a;
+    --warn-ink:    #7a4c06;
+    --warn-soft:   #f5e8cc;
+    --warn-strong: #b0430f;
+    --crit:        #c1272d;
+    --crit-ink:    #c1272d;
+    --crit-soft:   #f7dbdc;
+    --focus:     #2f6fed;
+    --selection-ink: #ffffff;
+    --shadow-1: 0 1px 2px rgba(20,24,27,.06);
+    --shadow-2: 0 8px 24px -8px rgba(20,24,27,.22);
+    --shadow-well-inset: rgba(0,0,0,.18);
     --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", "Consolas", monospace;
-    --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+    --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       color-scheme: dark;
-      --bg: #0d1013; --surface: #15191d; --ink: #f2f4f6; --ink-2: #aab2ba; --ink-3: #757e87;
-      --border: rgba(255,255,255,0.10); --accent: #9085e9; --accent-soft: #2a2350;
-      --good: #0ca30c; --critical: #e66767;
+      --bg: #0b0d0f; --panel: #16181b; --panel-2: #1c1f22; --well: #101214;
+      --ink: #f1f2f3; --ink-2: #a7adb2; --ink-3: #767d82;
+      --border: rgba(255,255,255,.08); --border-strong: rgba(255,255,255,.18);
+      --good: #2fd274; --good-ink: var(--good); --good-soft: rgba(47,210,116,.16);
+      --warn: #ffb648;  --warn-ink: var(--warn); --warn-soft: rgba(255,182,72,.16); --warn-strong: #ff8a3d;
+      --crit: #ff5c5c;  --crit-ink: var(--crit); --crit-soft: rgba(255,92,92,.18);
+      --focus: #6ea8ff;
+      --selection-ink: var(--bg);
+      --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+      --shadow-2: 0 12px 32px -8px rgba(0,0,0,.6);
     }
   }
   :root[data-theme="dark"] {
     color-scheme: dark;
-    --bg: #0d1013; --surface: #15191d; --ink: #f2f4f6; --ink-2: #aab2ba; --ink-3: #757e87;
-    --border: rgba(255,255,255,0.10); --accent: #9085e9; --accent-soft: #2a2350;
-    --good: #0ca30c; --critical: #e66767;
+    --bg: #0b0d0f; --panel: #16181b; --panel-2: #1c1f22; --well: #101214;
+    --ink: #f1f2f3; --ink-2: #a7adb2; --ink-3: #767d82;
+    --border: rgba(255,255,255,.08); --border-strong: rgba(255,255,255,.18);
+    --good: #2fd274; --good-ink: var(--good); --good-soft: rgba(47,210,116,.16);
+    --warn: #ffb648;  --warn-ink: var(--warn); --warn-soft: rgba(255,182,72,.16); --warn-strong: #ff8a3d;
+    --crit: #ff5c5c;  --crit-ink: var(--crit); --crit-soft: rgba(255,92,92,.18);
+    --focus: #6ea8ff;
+    --selection-ink: var(--bg);
+    --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-2: 0 12px 32px -8px rgba(0,0,0,.6);
   }
+
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
-  .page { max-width: 720px; margin: 0 auto; padding: 40px 24px 80px; display: flex; flex-direction: column; gap: 24px; }
-  .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0 0 8px; }
-  h1 { font-size: clamp(22px, 3vw, 28px); margin: 0 0 4px; letter-spacing: -0.01em; }
-  .sub { color: var(--ink-2); font-size: 13.5px; }
-  a.back { color: var(--ink-2); font-size: 12.5px; text-decoration: none; }
-  a.back:hover { color: var(--accent); }
+  html { scrollbar-color: var(--border-strong) transparent; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  ::selection { background: var(--focus); color: var(--selection-ink); }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  ::-webkit-scrollbar { height: 10px; width: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 8px; border: 2px solid var(--bg); }
+
+  .page { max-width: 720px; margin: 0 auto; padding: 40px 24px 88px; display: flex; flex-direction: column; gap: 20px; }
+  .masthead { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  h1 { font-size: clamp(19.5px, 2.64vw, 26.5px); margin: 0 0 6px; letter-spacing: -0.01em; font-weight: 400; }
+  .lineage { color: var(--ink-2); font-size: 11.5px; max-width: 52ch; line-height: 1.5; margin: 0; }
   .icon-btn {
     display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px;
-    border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--ink-2);
+    border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--ink-2);
     cursor: pointer; transition: border-color .15s ease, color .15s ease, transform .1s ease; flex-shrink: 0;
   }
-  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .icon-btn:hover { border-color: var(--border-strong); color: var(--ink); }
   .icon-btn:active { transform: scale(.94); }
   .icon-btn svg { width: 18px; height: 18px; }
 
+  a.back { color: var(--ink-3); font-size: 11px; text-decoration: none; }
+  a.back:hover { color: var(--ink); }
+
   form { display: flex; flex-direction: column; gap: 20px; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 22px 24px; display: flex; flex-direction: column; gap: 16px; }
+  section.panel {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 22px 24px 20px; box-shadow: var(--shadow-1); display: flex; flex-direction: column; gap: 16px;
+  }
+  h2 { font-size: 10px; font-weight: 700; margin: 0; text-transform: uppercase; letter-spacing: .09em; color: var(--ink-2); }
+  .panel-sub { font-size: 11px; color: var(--ink-3); margin-top: -8px; }
+
   .field { display: flex; flex-direction: column; gap: 6px; }
-  .field label { font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
-  .field .hint { font-size: 11.5px; color: var(--ink-3); }
+  .field label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
+  .field .hint { font-size: 10px; color: var(--ink-3); font-family: var(--font-mono); }
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 560px) { .row { grid-template-columns: 1fr; } }
 
   input, select, textarea {
     font: inherit;
-    font-size: 14px;
+    font-size: 11.5px;
     color: var(--ink);
-    background: var(--bg);
+    background: var(--well);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 10px 12px;
     width: 100%;
+    box-shadow: inset 0 1px 3px var(--shadow-well-inset);
   }
   input:focus, select:focus, textarea:focus {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--focus);
     outline-offset: 1px;
-    border-color: var(--accent);
+    border-color: var(--focus);
   }
   textarea { resize: vertical; min-height: 44px; }
 
-  h2 { font-size: 15px; font-weight: 600; margin: 0; }
-  .card-sub { font-size: 12.5px; color: var(--ink-2); margin-top: -10px; }
-
-  .finding-row { display: grid; grid-template-columns: 1fr 150px 32px; gap: 10px; align-items: start; }
+  .finding-row { display: grid; grid-template-columns: 1fr 150px 38px; gap: 10px; align-items: start; }
   @media (max-width: 560px) { .finding-row { grid-template-columns: 1fr; } }
   .finding-remove {
-    width: 32px; height: 38px; border-radius: 8px; border: 1px solid var(--border);
-    background: var(--bg); color: var(--ink-2); cursor: pointer; font-size: 16px; line-height: 1;
+    width: 38px; height: 38px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--ink-2); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: border-color .15s ease, color .15s ease, transform .1s ease;
   }
-  .finding-remove:hover { color: var(--critical); border-color: var(--critical); }
+  .finding-remove svg { width: 16px; height: 16px; }
+  .finding-remove:hover { color: var(--crit); border-color: var(--crit); }
+  .finding-remove:active { transform: scale(.94); }
 
   .add-finding {
     align-self: flex-start;
     display: inline-flex; align-items: center; gap: 6px;
-    font-size: 13px; font-weight: 600; color: var(--accent);
-    background: var(--accent-soft); border: none; border-radius: 8px;
-    padding: 8px 14px; cursor: pointer;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-2);
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 14px; cursor: pointer; transition: border-color .15s ease, color .15s ease;
   }
-  .add-finding:hover { opacity: 0.85; }
+  .add-finding:hover { border-color: var(--border-strong); color: var(--ink); }
 
-  .no-findings { font-size: 12.5px; color: var(--ink-3); font-style: italic; }
+  .no-findings { font-size: 11.5px; color: var(--ink-3); }
 
-  button.submit {
-    font: inherit; font-size: 14.5px; font-weight: 600; color: #fff;
-    background: var(--accent); border: none; border-radius: 8px;
-    padding: 12px 20px; cursor: pointer;
+  .btn-primary {
+    font-size: 11.5px; font-weight: 600; color: var(--bg); background: var(--ink); border-radius: 8px;
+    padding: 10px 16px; text-decoration: none; white-space: nowrap; border: 1px solid var(--ink);
+    cursor: pointer; align-self: flex-start; transition: opacity .15s ease, transform .1s ease;
   }
-  button.submit:hover { opacity: 0.92; }
-  button.submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary:hover { opacity: .86; }
+  .btn-primary:active { transform: scale(.98); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  .banner { border-radius: 10px; padding: 14px 18px; font-size: 13.5px; display: none; }
+  .banner { border-radius: 12px; padding: 14px 18px; font-size: 11.5px; display: none; line-height: 1.5; }
   .banner.show { display: block; }
-  .banner.success { background: color-mix(in srgb, var(--good) 14%, var(--surface)); border: 1px solid var(--good); color: var(--ink); }
-  .banner.error { background: color-mix(in srgb, var(--critical) 14%, var(--surface)); border: 1px solid var(--critical); color: var(--ink); }
-  .banner a { color: var(--accent); font-weight: 600; }
+  .banner.success { background: var(--good-soft); border: 1px solid var(--good); color: var(--ink); }
+  .banner.error { background: var(--crit-soft); border: 1px solid var(--crit); color: var(--ink); }
+  .banner a { color: var(--ink); font-weight: 700; text-decoration: underline; }
 </style>
 </head>
 <body>
 <div class="page">
-  <header style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+  <header class="masthead">
     <div>
-      <p class="eyebrow">Kalite &middot; Denetim Modülü</p>
       <h1>Yeni Denetim Kaydı</h1>
-      <div class="sub">Bir hat için aylık denetim ve varsa bulgularını gir.</div>
+      <p class="lineage">Bir hat için aylık denetim ve varsa bulgularını gir.</p>
     </div>
     <button class="icon-btn" id="theme-toggle" type="button" aria-label="Tema değiştir" aria-pressed="false">
       <svg id="theme-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M4.5 12H2.1M21.9 12h-2.4M6 6l1.7 1.7M16.3 16.3 18 18M18 6l-1.7 1.7M7.7 16.3 6 18"/></svg>
@@ -130,7 +179,8 @@
   <div class="banner" id="banner"></div>
 
   <form id="audit-form">
-    <div class="card">
+    <section class="panel">
+      <h2>Denetim Bilgileri</h2>
       <div class="row">
         <div class="field">
           <label for="line">Üretim Hattı</label>
@@ -144,21 +194,21 @@
       <div class="field" style="max-width: 220px;">
         <label for="month">Denetim Ayı</label>
         <input type="month" id="month" required />
-        <div class="hint">Örn. Ağustos 2026</div>
+        <div class="hint">Örn. 2026-08</div>
       </div>
-    </div>
+    </section>
 
-    <div class="card">
+    <section class="panel">
       <div>
         <h2>Bulgular</h2>
-        <div class="card-sub">Denetimde tespit edilen sorunlar (opsiyonel — hiç bulgu olmayabilir)</div>
+        <div class="panel-sub">Denetimde tespit edilen sorunlar (opsiyonel — hiç bulgu olmayabilir)</div>
       </div>
       <div id="findings-list"></div>
       <div id="no-findings" class="no-findings">Henüz bulgu eklenmedi.</div>
       <button type="button" class="add-finding" id="add-finding-btn">+ Bulgu Ekle</button>
-    </div>
+    </section>
 
-    <button type="submit" class="submit" id="submit-btn">Denetimi Kaydet</button>
+    <button type="submit" class="btn-primary" id="submit-btn">Denetimi Kaydet</button>
   </form>
 
   <a class="back" href="/quality-dashboard">&larr; Kalite Dashboard'a dön</a>
@@ -173,7 +223,9 @@
       <option value="HIGH">Yüksek</option>
       <option value="CRITICAL">Kritik</option>
     </select>
-    <button type="button" class="finding-remove" title="Bu bulguyu kaldır" data-remove>&times;</button>
+    <button type="button" class="finding-remove" title="Bu bulguyu kaldır" data-remove>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
   </div>
 </template>
 

@@ -4,106 +4,143 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>TV Sorgula — QualiTV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
   :root {
     color-scheme: light;
-    --bg:            #f5f6f8;
-    --surface:       #ffffff;
-    --ink:           #10161c;
-    --ink-2:         #55606b;
-    --ink-3:         #8b96a1;
-    --border:        #dde2e6;
-    --accent:        #2a78d6;
-    --accent-soft:   #dce9fa;
-    --good:          #0ca30c;
-    --critical:      #d03b3b;
+    --bg:            #e7e9eb;
+    --panel:         #f7f8f9;
+    --panel-2:       #eef0f1;
+    --well:          #e1e4e6;
+    --ink:           #14181b;
+    --ink-2:         #4b545c;
+    --ink-3:         #7c858c;
+    --border:        #d1d6d9;
+    --border-strong: #b3bac0;
+    --good:        #1c8a4d;
+    --good-ink:    #157a42;
+    --good-soft:   #dbefe1;
+    --warn:        #a8730a;
+    --warn-ink:    #7a4c06;
+    --warn-soft:   #f5e8cc;
+    --warn-strong: #b0430f;
+    --crit:        #c1272d;
+    --crit-ink:    #c1272d;
+    --crit-soft:   #f7dbdc;
+    --focus:     #2f6fed;
+    --selection-ink: #ffffff;
+    --shadow-1: 0 1px 2px rgba(20,24,27,.06);
+    --shadow-2: 0 8px 24px -8px rgba(20,24,27,.22);
+    --shadow-well-inset: rgba(0,0,0,.18);
     --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", "Consolas", monospace;
-    --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+    --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       color-scheme: dark;
-      --bg: #0d1013; --surface: #15191d; --ink: #f2f4f6; --ink-2: #aab2ba; --ink-3: #757e87;
-      --border: rgba(255,255,255,0.10); --accent: #3987e5; --accent-soft: #17293f;
-      --good: #0ca30c; --critical: #e66767;
+      --bg: #0b0d0f; --panel: #16181b; --panel-2: #1c1f22; --well: #101214;
+      --ink: #f1f2f3; --ink-2: #a7adb2; --ink-3: #767d82;
+      --border: rgba(255,255,255,.08); --border-strong: rgba(255,255,255,.18);
+      --good: #2fd274; --good-ink: var(--good); --good-soft: rgba(47,210,116,.16);
+      --warn: #ffb648;  --warn-ink: var(--warn); --warn-soft: rgba(255,182,72,.16); --warn-strong: #ff8a3d;
+      --crit: #ff5c5c;  --crit-ink: var(--crit); --crit-soft: rgba(255,92,92,.18);
+      --focus: #6ea8ff;
+      --selection-ink: var(--bg);
+      --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+      --shadow-2: 0 12px 32px -8px rgba(0,0,0,.6);
     }
   }
   :root[data-theme="dark"] {
     color-scheme: dark;
-    --bg: #0d1013; --surface: #15191d; --ink: #f2f4f6; --ink-2: #aab2ba; --ink-3: #757e87;
-    --border: rgba(255,255,255,0.10); --accent: #3987e5; --accent-soft: #17293f;
-    --good: #0ca30c; --critical: #e66767;
+    --bg: #0b0d0f; --panel: #16181b; --panel-2: #1c1f22; --well: #101214;
+    --ink: #f1f2f3; --ink-2: #a7adb2; --ink-3: #767d82;
+    --border: rgba(255,255,255,.08); --border-strong: rgba(255,255,255,.18);
+    --good: #2fd274; --good-ink: var(--good); --good-soft: rgba(47,210,116,.16);
+    --warn: #ffb648;  --warn-ink: var(--warn); --warn-soft: rgba(255,182,72,.16); --warn-strong: #ff8a3d;
+    --crit: #ff5c5c;  --crit-ink: var(--crit); --crit-soft: rgba(255,92,92,.18);
+    --focus: #6ea8ff;
+    --selection-ink: var(--bg);
+    --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-2: 0 12px 32px -8px rgba(0,0,0,.6);
   }
+
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
-  .page { max-width: 760px; margin: 0 auto; padding: 40px 24px 80px; display: flex; flex-direction: column; gap: 24px; }
-  .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0 0 8px; }
-  h1 { font-size: clamp(22px, 3vw, 28px); margin: 0 0 4px; letter-spacing: -0.01em; }
-  .sub { color: var(--ink-2); font-size: 13.5px; }
-  a.back { color: var(--ink-2); font-size: 12.5px; text-decoration: none; }
-  a.back:hover { color: var(--accent); }
+  html { scrollbar-color: var(--border-strong) transparent; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  ::selection { background: var(--focus); color: var(--selection-ink); }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  ::-webkit-scrollbar { height: 10px; width: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 8px; border: 2px solid var(--bg); }
+
+  .page { max-width: 760px; margin: 0 auto; padding: 40px 24px 88px; display: flex; flex-direction: column; gap: 20px; }
+  .masthead { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  h1 { font-size: clamp(19.5px, 2.64vw, 26.5px); margin: 0 0 6px; letter-spacing: -0.01em; font-weight: 400; }
+  .lineage { color: var(--ink-2); font-size: 11.5px; max-width: 52ch; line-height: 1.5; margin: 0; }
+  a.back { color: var(--ink-3); font-size: 11px; text-decoration: none; }
+  a.back:hover { color: var(--ink); }
   .icon-btn {
     display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px;
-    border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--ink-2);
+    border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--ink-2);
     cursor: pointer; transition: border-color .15s ease, color .15s ease, transform .1s ease; flex-shrink: 0;
   }
-  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .icon-btn:hover { border-color: var(--border-strong); color: var(--ink); }
   .icon-btn:active { transform: scale(.94); }
   .icon-btn svg { width: 18px; height: 18px; }
 
   .search-row { display: flex; gap: 10px; }
   input#serial-input {
-    font: inherit; font-size: 15px; color: var(--ink); background: var(--surface);
+    font: inherit; font-size: 13px; color: var(--ink); background: var(--well);
     border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; flex: 1;
-    font-family: var(--font-mono); letter-spacing: 0.02em;
+    font-family: var(--font-mono); letter-spacing: 0.02em; box-shadow: inset 0 1px 3px var(--shadow-well-inset);
   }
-  input#serial-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+  input#serial-input:focus { outline: 2px solid var(--focus); outline-offset: 1px; border-color: var(--focus); }
   button.search-btn {
-    font: inherit; font-size: 14.5px; font-weight: 600; color: #fff;
-    background: var(--accent); border: none; border-radius: 8px;
-    padding: 12px 22px; cursor: pointer; white-space: nowrap;
+    font: inherit; font-size: 11.5px; font-weight: 600; color: var(--bg);
+    background: var(--ink); border: 1px solid var(--ink); border-radius: 8px;
+    padding: 12px 22px; cursor: pointer; white-space: nowrap; transition: opacity .15s ease, transform .1s ease;
   }
-  button.search-btn:hover { opacity: 0.92; }
+  button.search-btn:hover { opacity: 0.86; }
+  button.search-btn:active { transform: scale(.98); }
   button.search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  section.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 22px 24px 20px; }
-  h2 { font-size: 15.5px; font-weight: 600; margin: 0; }
-  .card-sub { font-size: 12.5px; color: var(--ink-2); }
+  section.panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px 20px; box-shadow: var(--shadow-1); }
+  h2 { font-size: 10px; font-weight: 700; margin: 0; text-transform: uppercase; letter-spacing: .09em; color: var(--ink-2); }
+  .panel-sub { font-size: 11px; color: var(--ink-3); font-family: var(--font-mono); font-weight: 400; text-transform: none; letter-spacing: 0; }
 
-  .tv-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+  .tv-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
   @media (max-width: 620px) { .tv-meta { grid-template-columns: repeat(2, 1fr); } }
-  .meta-item { background: var(--surface); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
-  .meta-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); font-family: var(--font-mono); }
-  .meta-value { font-family: var(--font-mono); font-size: 15px; font-weight: 600; }
-  .status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; font-family: var(--font-mono); width: fit-content; }
-  .status-badge.IN_PRODUCTION { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); color: var(--accent); }
-  .status-badge.FAIL, .status-badge.SCRAP { background: color-mix(in srgb, var(--critical) 16%, var(--surface)); color: var(--critical); }
-  .status-badge.REWORK { background: color-mix(in srgb, var(--good) 16%, var(--surface)); color: var(--good); }
+  .meta-item { background: var(--panel-2); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+  .meta-label { font-size: 9px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); font-family: var(--font-mono); }
+  .meta-value { font-family: var(--font-mono); font-size: 13px; font-weight: 600; }
+  .status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 9.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; font-family: var(--font-mono); width: fit-content; }
+  .status-badge.IN_PRODUCTION { background: var(--panel); color: var(--ink-2); border: 1px solid var(--border); }
+  .status-badge.FAIL, .status-badge.SCRAP { background: var(--crit-soft); color: var(--crit-ink); }
+  .status-badge.REWORK { background: var(--warn-soft); color: var(--warn-ink); }
 
   .table-wrap { overflow-x: auto; }
-  table.insp-table { border-collapse: collapse; width: 100%; min-width: 480px; font-size: 12.5px; }
-  table.insp-table thead th {
-    text-align: left; font-family: var(--font-mono); font-weight: 600; color: var(--ink-3);
-    text-transform: uppercase; letter-spacing: .04em; font-size: 10.5px; padding: 8px 10px; border-bottom: 1px solid var(--border);
-  }
+  table.insp-table { border-collapse: collapse; width: 100%; min-width: 480px; font-size: 11px; }
+  table.insp-table thead th { text-align: left; font-family: var(--font-mono); font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; font-size: 9px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
   table.insp-table tbody td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--ink); }
   table.insp-table tbody tr:last-child td { border-bottom: none; }
   td.time { font-family: var(--font-mono); color: var(--ink-2); white-space: nowrap; }
-  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; font-family: var(--font-mono); }
-  .badge.pass { background: color-mix(in srgb, var(--good) 16%, var(--surface)); color: var(--good); }
-  .badge.fail { background: color-mix(in srgb, var(--critical) 16%, var(--surface)); color: var(--critical); }
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 9.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; font-family: var(--font-mono); }
+  .badge.pass { background: var(--good-soft); color: var(--good-ink); }
+  .badge.fail { background: var(--crit-soft); color: var(--crit-ink); }
 
-  .empty { text-align: center; padding: 40px 20px; color: var(--ink-2); font-size: 13.5px; }
-  .empty.error { color: var(--critical); }
+  .empty { text-align: center; padding: 40px 20px; color: var(--ink-2); font-size: 12px; }
+  .empty.error { color: var(--crit-ink); }
 </style>
 </head>
 <body>
 <div class="page">
-  <header style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+  <header class="masthead">
     <div>
-      <p class="eyebrow">Kalite Kontrol &middot; TV Geçmişi</p>
       <h1>TV Sorgula</h1>
-      <div class="sub">Seri numarasını gir, o TV'nin hattını ve tüm kontrol geçmişini gör.</div>
+      <p class="lineage">Seri numarasını gir, o TV'nin hattını ve tüm kontrol geçmişini gör.</p>
     </div>
     <button class="icon-btn" id="theme-toggle" type="button" aria-label="Tema değiştir" aria-pressed="false">
       <svg id="theme-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M4.5 12H2.1M21.9 12h-2.4M6 6l1.7 1.7M16.3 16.3 18 18M18 6l-1.7 1.7M7.7 16.3 6 18"/></svg>
@@ -201,14 +238,14 @@ function render(data) {
     : `<tr><td colspan="4" style="text-align:center; color:var(--ink-2); padding:20px;">Bu TV için hiç kontrol kaydı yok.</td></tr>`;
 
   resultEl.innerHTML = `
-    <section class="card">
+    <section class="panel">
       <div class="tv-meta">
         <div class="meta-item"><div class="meta-label">Seri No</div><div class="meta-value">${data.serial_number}</div></div>
         <div class="meta-item"><div class="meta-label">Üretim Hattı</div><div class="meta-value">${data.line_code} — ${data.line_name}</div></div>
         <div class="meta-item"><div class="meta-label">Durum</div><div class="meta-value"><span class="status-badge ${data.status}">${statusLabel(data.status)}</span></div></div>
-        <div class="meta-item"><div class="meta-label">Üretim Tarihi</div><div class="meta-value" style="font-size:13px;">${createdStr}</div></div>
+        <div class="meta-item"><div class="meta-label">Üretim Tarihi</div><div class="meta-value" style="font-size:11.5px;">${createdStr}</div></div>
       </div>
-      <h2 style="margin-bottom:10px;">Kontrol Geçmişi <span class="card-sub" style="font-weight:400;">(${data.inspections.length} kayıt)</span></h2>
+      <h2 style="margin-bottom:10px;">Kontrol Geçmişi <span class="panel-sub">(${data.inspections.length} kayıt)</span></h2>
       <div class="table-wrap">
         <table class="insp-table">
           <thead><tr><th>Tarih / Saat</th><th>Sonuç</th><th>Hata Türü</th><th>Ek Açıklama</th></tr></thead>
